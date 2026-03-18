@@ -105,7 +105,7 @@ var Notes = []Colour{
 
 func main() {
 	rng := rand.New(rand.NewSource(1))
-	input, err := os.Open("images/image01.png")
+	input, err := os.Open("images/image02.png")
 	if err != nil {
 		panic(err)
 	}
@@ -143,10 +143,10 @@ func main() {
 					g[y][x] = gray.Y
 				}
 			}
-			max, idx := 0.0, 0
+			min, idx := math.MaxFloat64, 0
 			for z := range colors {
-				if colors[z] > max {
-					max, idx = colors[z], z
+				if colors[z] < min {
+					min, idx = colors[z], z
 				}
 			}
 			entries[index].Note = Notes[idx].Note

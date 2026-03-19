@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/pointlander/colour/kmeans"
 	"github.com/pointlander/colour/pagerank"
 
 	"github.com/nfnt/resize"
@@ -166,9 +167,36 @@ func main() {
 	for i := range entries {
 		fmt.Println(i, entries[i].Rank, entries[i].Note)
 	}
+	vectors := make([][]float64, len(entries))
+	for i := range entries {
+		vectors[i] = entries[i].DCT[:]
+	}
+	clusters, _, err := kmeans.Kmeans(1, vectors, 7, kmeans.SquaredEuclideanDistance, -1)
+	if err != nil {
+		panic(err)
+	}
+	markov := make([][]Entry, 7)
+	for i := range entries {
+		markov[clusters[i]] = append(markov[clusters[i]], entries[i])
+	}
+	for i := range markov {
+		sum := 0.0
+		for j := range markov[i] {
+			sum += markov[i][j].Rank
+		}
+		for j := range markov[i] {
+			markov[i][j].Rank /= sum
+		}
+	}
+	table := make(map[uint8]int)
+	for i := range Notes {
+		table[Notes[i].Note] = i
+	}
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
+		previous := uint8(71)
 		for range 33 {
+			entries := markov[table[previous]]
 			total, selected, index := 0.0, rng.Float64(), 0
 			for j := range entries {
 				total += entries[j].Rank
@@ -182,6 +210,7 @@ func main() {
 			wr.SetDelta(120)
 			writer.NoteOff(wr, entries[index].Note)
 			wr.SetDelta(240)
+			previous = entries[index].Note
 		}
 
 		writer.EndOfTrack(wr)

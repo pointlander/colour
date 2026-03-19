@@ -104,6 +104,9 @@ var Notes = []Colour{
 	{0x7f00, 0, 0xffff, 60},
 }
 
+// State is the state of the markov model
+type State [2]byte
+
 func main() {
 	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
@@ -167,17 +170,28 @@ func main() {
 	for i := range entries {
 		fmt.Println(i, entries[i].Rank, entries[i].Note)
 	}
-	vectors := make([][]float64, len(entries))
-	for i := range entries {
-		vectors[i] = entries[i].DCT[:]
-	}
-	clusters, _, err := kmeans.Kmeans(1, vectors, 7, kmeans.SquaredEuclideanDistance, -1)
-	if err != nil {
-		panic(err)
-	}
-	markov := make([][]Entry, 7)
-	for i := range entries {
-		markov[clusters[i]] = append(markov[clusters[i]], entries[i])
+	markov := make(map[State][]Entry, 7)
+	var learn func(entries []Entry, state State, depth, max int)
+	learn = func(entries []Entry, state State, depth, max int) {
+		if depth > max {
+			return
+		}
+		vectors := make([][]float64, len(entries))
+		for i := range entries {
+			vectors[i] = entries[i].DCT[:]
+		}
+		clusters, _, err := kmeans.Kmeans(1, vectors, 7, kmeans.SquaredEuclideanDistance, -1)
+		if err != nil {
+			panic(err)
+		}
+		for i := range entries {
+			state[depth] = byte(clusters[i])
+			markov[state] = append(markov[state], entries[i])
+		}
+		for i := range 7 {
+			state[depth] = byte(i)
+			learn(markov[state], state, depth+1, max)
+		}
 	}
 	for i := range markov {
 		sum := 0.0
@@ -192,11 +206,12 @@ func main() {
 	for i := range Notes {
 		table[Notes[i].Note] = i
 	}
+	learn(entries, State{}, 0, 1)
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
-		previous := uint8(71)
+		state := State{}
 		for range 33 {
-			entries := markov[table[previous]]
+			entries := markov[state]
 			total, selected, index := 0.0, rng.Float64(), 0
 			for j := range entries {
 				total += entries[j].Rank
@@ -210,7 +225,7 @@ func main() {
 			wr.SetDelta(120)
 			writer.NoteOff(wr, entries[index].Note)
 			wr.SetDelta(240)
-			previous = entries[index].Note
+			state[0], state[1] = state[1], byte(table[entries[index].Note])
 		}
 
 		writer.EndOfTrack(wr)

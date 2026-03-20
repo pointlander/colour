@@ -136,7 +136,7 @@ func ImageMode() {
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank float64
-		Note uint8
+		Note [7]float64
 	}
 	entries := make([]Entry, (width/N)*(height/N))
 	fmt.Println(width/N, height/N)
@@ -159,13 +159,13 @@ func ImageMode() {
 					g[y][x] = gray.Y
 				}
 			}
-			min, idx := math.MaxFloat64, 0
-			for z := range colors {
-				if colors[z] < min {
-					min, idx = colors[z], z
-				}
+			sum := 0.0
+			for _, value := range colors {
+				sum += value
 			}
-			entries[index].Note = Notes[idx].Note
+			for i, value := range colors {
+				entries[index].Note[i] = value / sum
+			}
 			ForwardDCT(&g, &entries[index].DCT)
 			index++
 		}
@@ -232,12 +232,21 @@ func ImageMode() {
 					break
 				}
 			}
+			total, selected, color := 0.0, rng.Float64(), 0
+			for j, value := range entries[index].Note {
+				total += value
+				if selected < total {
+					color = j
+					break
+				}
+			}
+
 			wr.SetChannel(0)
-			writer.NoteOn(wr, entries[index].Note, 100)
+			writer.NoteOn(wr, Notes[color].Note, 100)
 			wr.SetDelta(120)
-			writer.NoteOff(wr, entries[index].Note)
+			writer.NoteOff(wr, Notes[color].Note)
 			wr.SetDelta(240)
-			state[0], state[1] = state[1], byte(table[entries[index].Note])
+			state[0], state[1] = state[1], byte(color)
 		}
 
 		writer.EndOfTrack(wr)

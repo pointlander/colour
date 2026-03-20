@@ -5,6 +5,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -107,7 +108,18 @@ var Notes = []Colour{
 // State is the state of the markov model
 type State [2]byte
 
-func main() {
+// Size is the size of the universe
+const Size = 128
+
+var (
+	// FlagIterations number of iterations
+	FlagIterations = flag.Int("i", 8, "number of iterations")
+	// FlagImage
+	FlagImage = flag.Bool("image", false, "image mode")
+)
+
+// ImageMode is the image mode
+func ImageMode() {
 	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
 	if err != nil {
@@ -235,4 +247,145 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func main() {
+	flag.Parse()
+
+	if *FlagImage {
+		ImageMode()
+		return
+	}
+
+	rng := rand.New(rand.NewSource(1))
+	var u [Size][Size]byte
+	rank := func() ([]float64, float64) {
+		g := pagerank.NewGraph(Size, rng)
+		for i := range u {
+			for j := range u {
+				if j > i {
+					break
+				}
+				if u[i][j] == 1 && u[j][i] == 1 {
+					g.Link(uint32(i), uint32(j), 1)
+					g.Link(uint32(j), uint32(i), 1)
+				}
+			}
+		}
+		ranks := make([]float64, Size)
+		g.Rank(.85, 0.0000001, func(node int, rank float64) {
+			ranks[node] = rank
+		})
+		sum := 0.0
+		for _, rank := range ranks {
+			sum += rank
+		}
+		avg := sum / float64(len(ranks))
+		v := 0.0
+		for _, rank := range ranks {
+			diff := rank - avg
+			v += diff * diff
+		}
+		v /= float64(len(ranks))
+		return ranks, v
+	}
+	indexes := rng.Perm(Size)
+	for _, i := range indexes {
+		count := 0
+		for _, value := range u[i] {
+			if value != 0 {
+				count++
+			}
+		}
+		perm := rng.Perm(Size)
+		count = Size/2 - count
+		for j, value := range perm {
+			if value != 0 {
+				continue
+			}
+			if count == 0 {
+				break
+			}
+			u[i][j] = 1
+			u[j][i] = 1
+			count--
+		}
+	}
+
+	err := writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
+		for range *FlagIterations * 1024 {
+			ranks, _ := rank()
+		search:
+			for {
+				a, b := rng.Intn(Size), rng.Intn(Size)
+
+				aa, bb := make([]int, 0, 8), make([]int, 0, 8)
+				for i, value := range u[a] {
+					if value != 0 {
+						aa = append(aa, i)
+					}
+				}
+				for i, value := range u[b] {
+					if value != 0 {
+						bb = append(bb, i)
+					}
+				}
+				rng.Shuffle(len(aa), func(i, j int) {
+					aa[i], aa[j] = aa[j], aa[i]
+				})
+				rng.Shuffle(len(bb), func(i, j int) {
+					bb[i], bb[j] = bb[j], bb[i]
+				})
+
+				if u[a][b] == 0 && u[b][a] == 0 {
+					if len(aa) >= 5 {
+						u[a][aa[0]] = 0
+						u[aa[0]][a] = 0
+					}
+					if len(bb) >= 5 {
+						u[b][bb[0]] = 0
+						u[bb[0]][b] = 0
+					}
+					u[a][b] = 1
+					u[b][a] = 1
+					r, _ := rank()
+					if r[a] < ranks[a] || r[b] < ranks[b] {
+						u[a][b] = 0
+						u[b][a] = 0
+						if len(aa) >= 5 {
+							u[a][aa[0]] = 1
+							u[aa[0]][a] = 1
+						}
+						if len(bb) >= 5 {
+							u[b][bb[0]] = 1
+							u[bb[0]][b] = 1
+						}
+					} else {
+						wr.SetChannel(0)
+						writer.NoteOn(wr, uint8(bb[0]), 100)
+						wr.SetDelta(120)
+						writer.NoteOff(wr, uint8(bb[0]))
+						wr.SetDelta(240)
+						break search
+					}
+				}
+			}
+			for i := range u {
+				for j := range u {
+					if u[i][j] != u[j][i] {
+						panic("not symmetric")
+					}
+				}
+			}
+			for i := range u {
+				fmt.Println(u[i])
+			}
+			fmt.Println()
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
 }

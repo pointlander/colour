@@ -126,12 +126,14 @@ func (s State) Next(next byte) State {
 var (
 	// FlagIterations number of iterations
 	FlagIterations = flag.Int("i", 8, "number of iterations")
-	// FlagImage
-	FlagImage = flag.Bool("image", false, "image mode")
+	// FlagMarkov markov mode
+	FlagMarkov = flag.Bool("markov", false, "image mode")
+	// FlagSmith
+	FlagSmith = flag.Bool("smith", false, "smith mode")
 )
 
-// ImageMode is the image mode
-func ImageMode() {
+// MarkovMode is the image mode
+func MarkovMode() {
 	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
 	if err != nil {
@@ -278,14 +280,8 @@ func ImageMode() {
 	}
 }
 
-func main() {
-	flag.Parse()
-
-	if *FlagImage {
-		ImageMode()
-		return
-	}
-
+// SmithMode is the smith mode
+func SmithMode() {
 	rng := rand.New(rand.NewSource(1))
 	var u [Size][Size]byte
 	rank := func() ([]float64, float64) {
@@ -416,5 +412,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
 
+func main() {
+	flag.Parse()
+
+	if *FlagMarkov {
+		MarkovMode()
+		return
+	}
+
+	if *FlagSmith {
+		SmithMode()
+		return
+	}
 }

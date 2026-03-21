@@ -89,6 +89,13 @@ func CS(a, b *[N * N]float64) float64 {
 	return ab / (math.Sqrt(aa) * math.Sqrt(bb))
 }
 
+const (
+	// Size is the size of the universe
+	Size = 128
+	// Order is the order of the markov model
+	Order = 4
+)
+
 // Colour
 type Colour struct {
 	R, G, B uint32
@@ -106,10 +113,15 @@ var Notes = []Colour{
 }
 
 // State is the state of the markov model
-type State [2]byte
+type State [Order]byte
 
-// Size is the size of the universe
-const Size = 128
+func (s State) Next(next byte) State {
+	for i := range s[:len(s)-1] {
+		s[i] = s[i+1]
+	}
+	s[len(s)-1] = next
+	return s
+}
 
 var (
 	// FlagIterations number of iterations
@@ -185,7 +197,7 @@ func ImageMode() {
 	markov := make(map[State][]Entry, 7)
 	var learn func(entries []Entry, state State, depth, max int)
 	learn = func(entries []Entry, state State, depth, max int) {
-		if depth > max {
+		if depth > max || len(entries) == 0 {
 			return
 		}
 		vectors := make([][]float64, len(entries))
@@ -218,12 +230,20 @@ func ImageMode() {
 	for i := range Notes {
 		table[Notes[i].Note] = i
 	}
-	learn(entries, State{}, 0, 1)
+	learn(entries, State{}, 0, Order-1)
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		state := State{}
 		for range 33 {
-			entries := markov[state]
+			var entries []Entry
+			{
+				state, i := state, 1
+				for entries == nil {
+					entries = markov[state]
+					state[len(state)-i] = 0
+					i++
+				}
+			}
 			total, selected, index := 0.0, rng.Float64(), 0
 			for j := range entries {
 				total += entries[j].Rank
@@ -246,7 +266,7 @@ func ImageMode() {
 			wr.SetDelta(120)
 			writer.NoteOff(wr, Notes[color].Note)
 			wr.SetDelta(240)
-			state[0], state[1] = state[1], byte(color)
+			state = state.Next(byte(color))
 		}
 
 		writer.EndOfTrack(wr)

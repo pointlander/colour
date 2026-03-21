@@ -426,4 +426,126 @@ func main() {
 		SmithMode()
 		return
 	}
+
+	rng := rand.New(rand.NewSource(1))
+	input, err := os.Open("images/image02.png")
+	if err != nil {
+		panic(err)
+	}
+	defer input.Close()
+	img, _, err := image.Decode(input)
+	if err != nil {
+		panic(err)
+	}
+	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
+	bounds := img.Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+	type Entry struct {
+		DCT  [N * N]float64
+		Rank float64
+		Note [7]float64
+		Link []*Entry
+	}
+	entries := make([]Entry, (width/N)*(height/N))
+	fmt.Println(width/N, height/N)
+	var g [8][8]uint8
+	index := 0
+	for r := 0; r < height/N; r++ {
+		for c := 0; c < width/N; c++ {
+			colors := make([]float64, len(Notes))
+			for y := 0; y < N; y++ {
+				for x := 0; x < N; x++ {
+					clr := img.At(c*N+x, r*N+y)
+					for z := range Notes {
+						r, g, b, _ := clr.RGBA()
+						red := float64(Notes[z].R) - float64(r)
+						green := float64(Notes[z].G) - float64(g)
+						blue := float64(Notes[z].B) - float64(b)
+						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
+					}
+					gray := color.GrayModel.Convert(clr).(color.Gray)
+					g[y][x] = gray.Y
+				}
+			}
+			sum := 0.0
+			for _, value := range colors {
+				sum += value
+			}
+			for i, value := range colors {
+				entries[index].Note[i] = value / sum
+			}
+			ForwardDCT(&g, &entries[index].DCT)
+			if r > 0 && c > 0 {
+				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c-1])
+			}
+			if r > 0 {
+				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c])
+			}
+			if r > 0 && c < (width/N)-1 {
+				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c+1])
+			}
+			if c < (width/N)-1 {
+				entries[index].Link = append(entries[index].Link, &entries[r*(width/N)+c+1])
+			}
+			if r < (height/N)-1 && c < (width/N)-1 {
+				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c+1])
+			}
+			if r < (height/N)-1 {
+				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c])
+			}
+			if r < (height/N)-1 && c > 0 {
+				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c-1])
+			}
+			if c > 0 {
+				entries[index].Link = append(entries[index].Link, &entries[r*(width/N)+c-1])
+			}
+			index++
+		}
+	}
+	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
+		u := 1.0
+		entry := &entries[0]
+		for range 1024 {
+			if rng.Float64() < entry.Rank/u {
+				total, selected, color := 0.0, rng.Float64(), 0
+				for j, value := range entry.Note {
+					total += value
+					if selected < total {
+						color = j
+						break
+					}
+				}
+
+				wr.SetChannel(0)
+				writer.NoteOn(wr, Notes[color].Note, 100)
+				wr.SetDelta(120)
+				writer.NoteOff(wr, Notes[color].Note)
+				wr.SetDelta(240)
+			}
+			entry.Rank++
+			u++
+
+			distribution := make([]float64, 0, 8)
+			for _, next := range entry.Link {
+				distribution = append(distribution, CS(&entry.DCT, &next.DCT))
+			}
+			sum := 0.0
+			for _, value := range distribution {
+				sum += value
+			}
+			total, selected, index := 0.0, rng.Float64(), 0
+			for i, value := range distribution {
+				total += value / sum
+				if selected < total {
+					index = i
+					break
+				}
+			}
+			entry = entry.Link[index]
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
 }

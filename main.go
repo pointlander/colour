@@ -443,6 +443,7 @@ func main() {
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank float64
+		Meta float64
 		Note [7]float64
 		Link []*Entry
 	}
@@ -502,10 +503,11 @@ func main() {
 			index++
 		}
 	}
+	u, u2 := 1.0, 1.0
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
-		u := 1.0
 		entry := &entries[0]
-		for range 1024 {
+		entry2 := &entries[rng.Intn(len(entries))]
+		for range 8 * 1024 {
 			if rng.Float64() < entry.Rank/u {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry.Note {
@@ -524,6 +526,10 @@ func main() {
 			}
 			entry.Rank++
 			u++
+			if entry == entry2 {
+				entry.Meta++
+				u2++
+			}
 
 			distribution := make([]float64, 0, 8)
 			for _, next := range entry.Link {
@@ -542,10 +548,37 @@ func main() {
 				}
 			}
 			entry = entry.Link[index]
+
+			{
+				distribution := make([]float64, 0, 8)
+				for _, next := range entry2.Link {
+					distribution = append(distribution, CS(&entry2.DCT, &next.DCT))
+				}
+				sum := 0.0
+				for _, value := range distribution {
+					sum += value
+				}
+				total, selected, index := 0.0, rng.Float64(), 0
+				for i, value := range distribution {
+					total += value / sum
+					if selected < total {
+						index = i
+						break
+					}
+				}
+				entry2 = entry2.Link[index]
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		panic(err)
+	}
+
+	for _, entry := range entries {
+		if entry.Rank == 0 || entry.Meta == 0 {
+			continue
+		}
+		fmt.Println(entry.Rank/u, entry.Meta/u2)
 	}
 }

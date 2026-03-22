@@ -575,10 +575,40 @@ func main() {
 		panic(err)
 	}
 
+	count, sum, sum2 := 0.0, 0.0, 0.0
 	for _, entry := range entries {
-		if entry.Rank == 0 || entry.Meta == 0 {
+		/*if entry.Rank == 0 || entry.Meta == 0 {
 			continue
-		}
-		fmt.Println(entry.Rank/u, entry.Meta/u2)
+		}*/
+		//fmt.Println(entry.Rank/u, entry.Meta/u2)
+		count++
+		sum += entry.Rank / u
+		sum2 += entry.Meta / u2
 	}
+	avg := sum / count
+	avg2 := sum2 / count
+	stddev, stddev2 := 0.0, 0.0
+	for _, entry := range entries {
+		/*if entry.Rank == 0 || entry.Meta == 0 {
+			continue
+		}*/
+		diff := avg - entry.Rank/u
+		stddev += diff * diff
+		diff2 := avg2 - entry.Meta/u2
+		stddev2 += diff2 * diff2
+	}
+	stddev /= count
+	stddev2 /= count
+	stddev = math.Sqrt(stddev)
+	stddev2 = math.Sqrt(stddev2)
+	corr := 0.0
+	for _, entry := range entries {
+		/*if entry.Rank == 0 || entry.Meta == 0 {
+			continue
+		}*/
+		corr += (entry.Rank/u - avg) * (entry.Meta/u2 - avg2)
+	}
+	corr /= count
+	corr /= stddev * stddev2
+	fmt.Println(corr)
 }

@@ -541,8 +541,8 @@ func main() {
 
 			for i, v := range entry {
 				distribution := v.Dist
-				if v.Dist == nil {
-					distribution := make([]float64, 0, 8)
+				if distribution == nil {
+					distribution = make([]float64, 0, 8)
 					for _, next := range v.Link {
 						distribution = append(distribution, CS(&v.DCT, &next.DCT))
 					}

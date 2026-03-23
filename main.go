@@ -440,9 +440,10 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
+	const Order = 3
 	type Entry struct {
 		DCT  [N * N]float64
-		Rank [2]float64
+		Rank [Order]float64
 		Note [7]float64
 		Link []*Entry
 	}
@@ -502,13 +503,15 @@ func main() {
 			index++
 		}
 	}
-	var u [2]float64
+	var u [Order]float64
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
-		entry := [2]*Entry{
+		entry := []*Entry{
 			&entries[0],
-			&entries[rng.Intn(len(entries))],
 		}
-		for range 8 * 1024 {
+		for range Order - 1 {
+			entry = append(entry, &entries[rng.Intn(len(entries))])
+		}
+		for range 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {

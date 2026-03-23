@@ -446,6 +446,7 @@ func main() {
 		Rank [Order]float64
 		Note [7]float64
 		Link []*Entry
+		Dist []float64
 	}
 	entries := make([]Entry, (width/N)*(height/N))
 	fmt.Println(width/N, height/N)
@@ -511,7 +512,7 @@ func main() {
 		for range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
 		}
-		for range 1024 * 1024 {
+		for range 128 * 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {
@@ -539,17 +540,24 @@ func main() {
 			}
 
 			for i, v := range entry {
-				distribution := make([]float64, 0, 8)
-				for _, next := range v.Link {
-					distribution = append(distribution, CS(&v.DCT, &next.DCT))
-				}
-				sum := 0.0
-				for _, value := range distribution {
-					sum += value
+				distribution := v.Dist
+				if v.Dist == nil {
+					distribution := make([]float64, 0, 8)
+					for _, next := range v.Link {
+						distribution = append(distribution, CS(&v.DCT, &next.DCT))
+					}
+					sum := 0.0
+					for _, value := range distribution {
+						sum += value
+					}
+					for i, value := range distribution {
+						distribution[i] = value / sum
+					}
+					v.Dist = distribution
 				}
 				total, selected, index := 0.0, rng.Float64(), 0
 				for i, value := range distribution {
-					total += value / sum
+					total += value
 					if selected < total {
 						index = i
 						break

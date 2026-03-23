@@ -442,8 +442,7 @@ func main() {
 	width, height := bounds.Max.X, bounds.Max.Y
 	type Entry struct {
 		DCT  [N * N]float64
-		Rank float64
-		Meta float64
+		Rank [2]float64
 		Note [7]float64
 		Link []*Entry
 	}
@@ -503,14 +502,16 @@ func main() {
 			index++
 		}
 	}
-	u, u2 := 1.0, 1.0
+	var u [2]float64
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
-		entry := &entries[0]
-		entry2 := &entries[rng.Intn(len(entries))]
+		entry := [2]*Entry{
+			&entries[0],
+			&entries[rng.Intn(len(entries))],
+		}
 		for range 8 * 1024 {
-			if rng.Float64() < entry.Rank/u {
+			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
-				for j, value := range entry.Note {
+				for j, value := range entry[0].Note {
 					total += value
 					if selected < total {
 						color = j
@@ -524,35 +525,20 @@ func main() {
 				writer.NoteOff(wr, Notes[color].Note)
 				wr.SetDelta(240)
 			}
-			entry.Rank++
-			u++
-			if entry == entry2 {
-				entry.Meta++
-				u2++
-			}
-
-			distribution := make([]float64, 0, 8)
-			for _, next := range entry.Link {
-				distribution = append(distribution, CS(&entry.DCT, &next.DCT))
-			}
-			sum := 0.0
-			for _, value := range distribution {
-				sum += value
-			}
-			total, selected, index := 0.0, rng.Float64(), 0
-			for i, value := range distribution {
-				total += value / sum
-				if selected < total {
-					index = i
+			entry[0].Rank[0]++
+			u[0]++
+			for i, v := range entry[1:] {
+				if entry[0] != v {
 					break
 				}
+				entry[i+1].Rank[i+1]++
+				u[i+1]++
 			}
-			entry = entry.Link[index]
 
-			{
+			for i, v := range entry {
 				distribution := make([]float64, 0, 8)
-				for _, next := range entry2.Link {
-					distribution = append(distribution, CS(&entry2.DCT, &next.DCT))
+				for _, next := range v.Link {
+					distribution = append(distribution, CS(&v.DCT, &next.DCT))
 				}
 				sum := 0.0
 				for _, value := range distribution {
@@ -566,7 +552,7 @@ func main() {
 						break
 					}
 				}
-				entry2 = entry2.Link[index]
+				entry[i] = v.Link[index]
 			}
 		}
 		return nil
@@ -575,40 +561,42 @@ func main() {
 		panic(err)
 	}
 
-	count, sum, sum2 := 0.0, 0.0, 0.0
-	for _, entry := range entries {
-		/*if entry.Rank == 0 || entry.Meta == 0 {
-			continue
-		}*/
-		//fmt.Println(entry.Rank/u, entry.Meta/u2)
-		count++
-		sum += entry.Rank / u
-		sum2 += entry.Meta / u2
+	for i := range u[1:] {
+		count, sum, sum2 := 0.0, 0.0, 0.0
+		for _, entry := range entries {
+			/*if entry.Rank == 0 || entry.Meta == 0 {
+				continue
+			}*/
+			//fmt.Println(entry.Rank/u, entry.Meta/u2)
+			count++
+			sum += entry.Rank[0] / u[0]
+			sum2 += entry.Rank[i+1] / u[i+1]
+		}
+		avg := sum / count
+		avg2 := sum2 / count
+		stddev, stddev2 := 0.0, 0.0
+		for _, entry := range entries {
+			/*if entry.Rank == 0 || entry.Meta == 0 {
+				continue
+			}*/
+			diff := avg - entry.Rank[0]/u[0]
+			stddev += diff * diff
+			diff2 := avg2 - entry.Rank[i+1]/u[i+1]
+			stddev2 += diff2 * diff2
+		}
+		stddev /= count
+		stddev2 /= count
+		stddev = math.Sqrt(stddev)
+		stddev2 = math.Sqrt(stddev2)
+		corr := 0.0
+		for _, entry := range entries {
+			/*if entry.Rank == 0 || entry.Meta == 0 {
+				continue
+			}*/
+			corr += (entry.Rank[0]/u[0] - avg) * (entry.Rank[i+1]/u[i+1] - avg2)
+		}
+		corr /= count
+		corr /= stddev * stddev2
+		fmt.Println(corr)
 	}
-	avg := sum / count
-	avg2 := sum2 / count
-	stddev, stddev2 := 0.0, 0.0
-	for _, entry := range entries {
-		/*if entry.Rank == 0 || entry.Meta == 0 {
-			continue
-		}*/
-		diff := avg - entry.Rank/u
-		stddev += diff * diff
-		diff2 := avg2 - entry.Meta/u2
-		stddev2 += diff2 * diff2
-	}
-	stddev /= count
-	stddev2 /= count
-	stddev = math.Sqrt(stddev)
-	stddev2 = math.Sqrt(stddev2)
-	corr := 0.0
-	for _, entry := range entries {
-		/*if entry.Rank == 0 || entry.Meta == 0 {
-			continue
-		}*/
-		corr += (entry.Rank/u - avg) * (entry.Meta/u2 - avg2)
-	}
-	corr /= count
-	corr /= stddev * stddev2
-	fmt.Println(corr)
 }

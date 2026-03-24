@@ -440,7 +440,7 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	const Order = 3
+	const Order = 5
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank [Order]float64

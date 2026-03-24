@@ -451,7 +451,7 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	const Order = 3
+	const Order = 4
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank [Order]float64
@@ -523,7 +523,7 @@ func main() {
 		for range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
 		}
-		for range 256 * 1024 * 1024 {
+		for range 1024 * 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {
@@ -542,10 +542,13 @@ func main() {
 			}
 			entry[0].Rank[0]++
 			u[0]++
-			for i, v := range entry[1:] {
-				if entry[0] != v {
-					break
+			count := 0
+			for _, v := range entry[1:] {
+				if entry[0] == v {
+					count++
 				}
+			}
+			for i := range count {
 				entry[i+1].Rank[i+1]++
 				u[i+1]++
 			}

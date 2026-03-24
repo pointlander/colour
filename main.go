@@ -29,7 +29,7 @@ const (
 	// N is the block size
 	N int = 8
 	// Scale is the scale size
-	Scale int = 4
+	Scale int = 8
 )
 
 var (

@@ -451,7 +451,7 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	const Order = 5
+	const Order = 3
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank [Order]float64
@@ -523,7 +523,7 @@ func main() {
 		for range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
 		}
-		for range 128 * 1024 * 1024 {
+		for range 256 * 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {
@@ -555,7 +555,7 @@ func main() {
 				if distribution == nil {
 					distribution = make([]float64, 0, 8)
 					for _, next := range v.Link {
-						distribution = append(distribution, CS(&v.DCT, &next.DCT))
+						distribution = append(distribution, math.Abs(CS(&v.DCT, &next.DCT)))
 					}
 					sum := 0.0
 					for _, value := range distribution {
@@ -600,6 +600,11 @@ func main() {
 	scatter.GlyphStyle.Shape = draw.CircleGlyph{}
 	p.Add(scatter)
 
+	err = p.Save(8*vg.Inch, 8*vg.Inch, "plot0.png")
+	if err != nil {
+		panic(err)
+	}
+
 	for i := range u[1:] {
 		points := make(plotter.XYs, 0, 8)
 		for x, entry := range entries {
@@ -619,6 +624,26 @@ func main() {
 			A: 0xff,
 		}
 		p.Add(scatter)
+
+		{
+			p := plot.New()
+			p.Title.Text = "y vs x"
+			p.X.Label.Text = "x"
+			p.Y.Label.Text = "y"
+
+			scatter, err := plotter.NewScatter(points)
+			if err != nil {
+				panic(err)
+			}
+			scatter.GlyphStyle.Radius = vg.Length(1)
+			scatter.GlyphStyle.Shape = draw.CircleGlyph{}
+			p.Add(scatter)
+
+			err = p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("plot%d.png", i+1))
+			if err != nil {
+				panic(err)
+			}
+		}
 
 		count, sum, sum2 := 0.0, 0.0, 0.0
 		for _, entry := range entries {

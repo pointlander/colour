@@ -19,6 +19,10 @@ import (
 
 	"github.com/nfnt/resize"
 	"gitlab.com/gomidi/midi/writer"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/draw"
 )
 
 const (
@@ -103,12 +107,19 @@ type Colour struct {
 }
 
 var Notes = []Colour{
+	// red
 	{0xffff, 0, 0, 62},
+	// orange
 	{0xffff, 0xa5a5, 0, 64},
+	// yellow
 	{0xffff, 0xffff, 0, 65},
+	// green
 	{0, 0xffff, 0, 67},
+	// blue
 	{0, 0, 0xffff, 69},
+	// indigo
 	{0x4b4b, 0, 0x8282, 71},
+	// violet
 	{0x7f00, 0, 0xffff, 60},
 }
 
@@ -572,7 +583,43 @@ func main() {
 		panic(err)
 	}
 
+	p := plot.New()
+	p.Title.Text = "y vs x"
+	p.X.Label.Text = "x"
+	p.Y.Label.Text = "y"
+
+	points := make(plotter.XYs, 0, 8)
+	for i, entry := range entries {
+		points = append(points, plotter.XY{X: float64(i), Y: entry.Rank[0] / u[0]})
+	}
+	scatter, err := plotter.NewScatter(points)
+	if err != nil {
+		panic(err)
+	}
+	scatter.GlyphStyle.Radius = vg.Length(1)
+	scatter.GlyphStyle.Shape = draw.CircleGlyph{}
+	p.Add(scatter)
+
 	for i := range u[1:] {
+		points := make(plotter.XYs, 0, 8)
+		for x, entry := range entries {
+			points = append(points, plotter.XY{X: float64(x), Y: entry.Rank[i+1] / u[i+1]})
+		}
+		scatter, err := plotter.NewScatter(points)
+		if err != nil {
+			panic(err)
+		}
+		scatter.GlyphStyle.Radius = vg.Length(1)
+		scatter.GlyphStyle.Shape = draw.CircleGlyph{}
+		note := Notes[i]
+		scatter.GlyphStyle.Color = color.RGBA{
+			R: uint8(note.R >> 8),
+			G: uint8(note.G >> 8),
+			B: uint8(note.B >> 8),
+			A: 0xff,
+		}
+		p.Add(scatter)
+
 		count, sum, sum2 := 0.0, 0.0, 0.0
 		for _, entry := range entries {
 			/*if entry.Rank == 0 || entry.Meta == 0 {
@@ -608,6 +655,11 @@ func main() {
 		}
 		corr /= count
 		corr /= stddev * stddev2
-		fmt.Println(corr)
+		fmt.Println(avg2, stddev2, corr)
+	}
+
+	err = p.Save(8*vg.Inch, 8*vg.Inch, "plot.png")
+	if err != nil {
+		panic(err)
 	}
 }

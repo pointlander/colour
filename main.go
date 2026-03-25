@@ -517,15 +517,19 @@ func main() {
 			index++
 		}
 	}
+	addr := make([][]int, Order-1)
+	for i := range addr {
+		addr[i] = rng.Perm(len(entries))
+	}
 	var u [Order]float64
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		entry := []*Entry{
 			&entries[0],
 		}
-		fold, f := []int{0}, 2
-		for i := range Order - 1 {
+		fold := []int{0}
+		for range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
-			fold = append(fold, len(entries)/f-i)
+			fold = append(fold, len(entries)/2)
 		}
 		for range 8 * 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
@@ -548,7 +552,7 @@ func main() {
 			u[0]++
 			for i, v := range entry[1:] {
 				if (entry[0].Addr*entry[0].Addr)%fold[i+1] ==
-					(v.Addr*v.Addr)%fold[i+1] {
+					(addr[i][v.Addr]*addr[i][v.Addr])%fold[i+1] {
 					entry[i+1].Rank[i+1]++
 					u[i+1]++
 				}

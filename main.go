@@ -523,12 +523,11 @@ func main() {
 			&entries[0],
 		}
 		fold, f := []int{0}, 2
-		for range Order - 1 {
+		for i := range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
-			fold = append(fold, len(entries)/f)
-			f *= 2
+			fold = append(fold, len(entries)/f-i)
 		}
-		for range 1024 * 1024 {
+		for range 8 * 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {
@@ -621,7 +620,7 @@ func main() {
 		}
 		scatter.GlyphStyle.Radius = vg.Length(1)
 		scatter.GlyphStyle.Shape = draw.CircleGlyph{}
-		note := Notes[i]
+		note := Notes[i%len(Notes)]
 		scatter.GlyphStyle.Color = color.RGBA{
 			R: uint8(note.R >> 8),
 			G: uint8(note.G >> 8),

@@ -451,8 +451,9 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	const Order = 4
+	const Order = 7
 	type Entry struct {
+		Addr int
 		DCT  [N * N]float64
 		Rank [Order]float64
 		Note [7]float64
@@ -512,6 +513,7 @@ func main() {
 			if c > 0 {
 				entries[index].Link = append(entries[index].Link, &entries[r*(width/N)+c-1])
 			}
+			entries[index].Addr = index
 			index++
 		}
 	}
@@ -520,10 +522,13 @@ func main() {
 		entry := []*Entry{
 			&entries[0],
 		}
+		fold, f := []int{0}, 2
 		for range Order - 1 {
 			entry = append(entry, &entries[rng.Intn(len(entries))])
+			fold = append(fold, len(entries)/f)
+			f *= 2
 		}
-		for range 1024 * 1024 * 1024 {
+		for range 1024 * 1024 {
 			if rng.Float64() < entry[0].Rank[0]/u[0] {
 				total, selected, color := 0.0, rng.Float64(), 0
 				for j, value := range entry[0].Note {
@@ -542,15 +547,12 @@ func main() {
 			}
 			entry[0].Rank[0]++
 			u[0]++
-			count := 0
-			for _, v := range entry[1:] {
-				if entry[0] == v {
-					count++
+			for i, v := range entry[1:] {
+				if (entry[0].Addr*entry[0].Addr)%fold[i+1] ==
+					(v.Addr*v.Addr)%fold[i+1] {
+					entry[i+1].Rank[i+1]++
+					u[i+1]++
 				}
-			}
-			for i := range count {
-				entry[i+1].Rank[i+1]++
-				u[i+1]++
 			}
 
 			for i, v := range entry {

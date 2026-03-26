@@ -13,6 +13,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	//"sort"
 
 	"github.com/pointlander/colour/kmeans"
 	"github.com/pointlander/colour/pagerank"
@@ -425,6 +426,57 @@ func SmithMode() {
 	}
 }
 
+// Width is the width of the network
+const Width = 7
+
+// Entry is a neural entry
+type Entry struct {
+	Addr int
+	DCT  [N * N]float64
+	Rank [Width]float64
+	Note [7]float64
+	Link []*Entry
+	Dist []float64
+}
+
+// Net is a neural network
+type Net struct {
+	Index   int
+	Entries []Entry
+	Addr    [][]int
+}
+
+// Len is the length of the net
+func (n Net) Len() int {
+	return len(n.Entries)
+}
+
+// Swap swaps to items
+func (n Net) Swap(i, j int) {
+	n.Addr[n.Index-1][i], n.Addr[n.Index-1][j] =
+		n.Addr[n.Index-1][j], n.Addr[n.Index-1][i]
+	n.Entries[i].Rank[n.Index], n.Entries[j].Rank[n.Index] =
+		n.Entries[j].Rank[n.Index], n.Entries[i].Rank[n.Index]
+}
+
+// Less determins is one value is less
+func (n Net) Less(i, j int) bool {
+	return n.Entries[i].Rank[n.Index] < n.Entries[j].Rank[n.Index]
+}
+
+// NewNet makes a new neural network
+func NewNet(rng *rand.Rand, size int) Net {
+	entries := make([]Entry, size)
+	addr := make([][]int, Width-1)
+	for i := range addr {
+		addr[i] = rng.Perm(len(entries))
+	}
+	return Net{
+		Entries: entries,
+		Addr:    addr,
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -451,16 +503,8 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	const Order = 7
-	type Entry struct {
-		Addr int
-		DCT  [N * N]float64
-		Rank [Order]float64
-		Note [7]float64
-		Link []*Entry
-		Dist []float64
-	}
-	entries := make([]Entry, (width/N)*(height/N))
+
+	net := NewNet(rng, (width/N)*(height/N))
 	fmt.Println(width/N, height/N)
 	var g [8][8]uint8
 	index := 0
@@ -486,104 +530,113 @@ func main() {
 				sum += value
 			}
 			for i, value := range colors {
-				entries[index].Note[i] = value / sum
+				net.Entries[index].Note[i] = value / sum
 			}
-			ForwardDCT(&g, &entries[index].DCT)
+			ForwardDCT(&g, &net.Entries[index].DCT)
 			if r > 0 && c > 0 {
-				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c-1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r-1)*(width/N)+c-1])
 			}
 			if r > 0 {
-				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r-1)*(width/N)+c])
 			}
 			if r > 0 && c < (width/N)-1 {
-				entries[index].Link = append(entries[index].Link, &entries[(r-1)*(width/N)+c+1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r-1)*(width/N)+c+1])
 			}
 			if c < (width/N)-1 {
-				entries[index].Link = append(entries[index].Link, &entries[r*(width/N)+c+1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[r*(width/N)+c+1])
 			}
 			if r < (height/N)-1 && c < (width/N)-1 {
-				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c+1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r+1)*(width/N)+c+1])
 			}
 			if r < (height/N)-1 {
-				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r+1)*(width/N)+c])
 			}
 			if r < (height/N)-1 && c > 0 {
-				entries[index].Link = append(entries[index].Link, &entries[(r+1)*(width/N)+c-1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[(r+1)*(width/N)+c-1])
 			}
 			if c > 0 {
-				entries[index].Link = append(entries[index].Link, &entries[r*(width/N)+c-1])
+				net.Entries[index].Link = append(net.Entries[index].Link, &net.Entries[r*(width/N)+c-1])
 			}
-			entries[index].Addr = index
+			net.Entries[index].Addr = index
 			index++
 		}
 	}
-	addr := make([][]int, Order-1)
-	for i := range addr {
-		addr[i] = rng.Perm(len(entries))
-	}
-	var u [Order]float64
+
+	var u [Width]float64
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		entry := []*Entry{
-			&entries[0],
+			&net.Entries[0],
 		}
 		fold := []int{0}
-		for range Order - 1 {
-			entry = append(entry, &entries[rng.Intn(len(entries))])
-			fold = append(fold, len(entries)/2)
+		for range Width - 1 {
+			entry = append(entry, &net.Entries[rng.Intn(len(net.Entries))])
+			fold = append(fold, len(net.Entries)/2)
 		}
-		for range 8 * 1024 * 1024 {
-			if rng.Float64() < entry[0].Rank[0]/u[0] {
-				total, selected, color := 0.0, rng.Float64(), 0
-				for j, value := range entry[0].Note {
-					total += value
-					if selected < total {
-						color = j
-						break
+		for range 8 {
+			for range 8 * 1024 * 1024 {
+				if rng.Float64() < entry[0].Rank[0]/u[0] {
+					total, selected, color := 0.0, rng.Float64(), 0
+					for j, value := range entry[0].Note {
+						total += value
+						if selected < total {
+							color = j
+							break
+						}
+					}
+
+					wr.SetChannel(0)
+					writer.NoteOn(wr, Notes[color].Note, 100)
+					wr.SetDelta(120)
+					writer.NoteOff(wr, Notes[color].Note)
+					wr.SetDelta(240)
+				}
+				entry[0].Rank[0]++
+				u[0]++
+				for i, v := range entry[1:] {
+					if (entry[0].Addr*entry[0].Addr)%fold[i+1] ==
+						(net.Addr[i][v.Addr]*net.Addr[i][v.Addr])%fold[i+1] {
+						entry[i+1].Rank[i+1]++
+						u[i+1]++
 					}
 				}
 
-				wr.SetChannel(0)
-				writer.NoteOn(wr, Notes[color].Note, 100)
-				wr.SetDelta(120)
-				writer.NoteOff(wr, Notes[color].Note)
-				wr.SetDelta(240)
-			}
-			entry[0].Rank[0]++
-			u[0]++
-			for i, v := range entry[1:] {
-				if (entry[0].Addr*entry[0].Addr)%fold[i+1] ==
-					(addr[i][v.Addr]*addr[i][v.Addr])%fold[i+1] {
-					entry[i+1].Rank[i+1]++
-					u[i+1]++
-				}
-			}
-
-			for i, v := range entry {
-				distribution := v.Dist
-				if distribution == nil {
-					distribution = make([]float64, 0, 8)
-					for _, next := range v.Link {
-						distribution = append(distribution, math.Abs(CS(&v.DCT, &next.DCT)))
+				for i, v := range entry {
+					distribution := v.Dist
+					if distribution == nil {
+						distribution = make([]float64, 0, 8)
+						for _, next := range v.Link {
+							distribution = append(distribution, math.Abs(CS(&v.DCT, &next.DCT)))
+						}
+						sum := 0.0
+						for _, value := range distribution {
+							sum += value
+						}
+						for i, value := range distribution {
+							distribution[i] = value / sum
+						}
+						v.Dist = distribution
 					}
-					sum := 0.0
-					for _, value := range distribution {
-						sum += value
-					}
+					total, selected, index := 0.0, rng.Float64(), 0
 					for i, value := range distribution {
-						distribution[i] = value / sum
+						total += value
+						if selected < total {
+							index = i
+							break
+						}
 					}
-					v.Dist = distribution
+					entry[i] = v.Link[index]
 				}
-				total, selected, index := 0.0, rng.Float64(), 0
-				for i, value := range distribution {
-					total += value
-					if selected < total {
-						index = i
-						break
-					}
-				}
-				entry[i] = v.Link[index]
 			}
+			/*for i := 1; i < Width; i++ {
+				net.Index = i
+				sort.Sort(net)
+				sort.Slice(net.Entries, func(i, j int) bool {
+					return net.Entries[i].Addr < net.Entries[j].Addr
+				})
+			}*/
+			/*for i := range net.Addr {
+				net.Addr[i] = rng.Perm(len(net.Entries))
+			}*/
 		}
 		return nil
 	})
@@ -597,7 +650,7 @@ func main() {
 	p.Y.Label.Text = "y"
 
 	points := make(plotter.XYs, 0, 8)
-	for i, entry := range entries {
+	for i, entry := range net.Entries {
 		points = append(points, plotter.XY{X: float64(i), Y: entry.Rank[0] / u[0]})
 	}
 	scatter, err := plotter.NewScatter(points)
@@ -615,7 +668,7 @@ func main() {
 
 	for i := range u[1:] {
 		points := make(plotter.XYs, 0, 8)
-		for x, entry := range entries {
+		for x, entry := range net.Entries {
 			points = append(points, plotter.XY{X: float64(x), Y: entry.Rank[i+1] / u[i+1]})
 		}
 		scatter, err := plotter.NewScatter(points)
@@ -654,7 +707,7 @@ func main() {
 		}
 
 		count, sum, sum2 := 0.0, 0.0, 0.0
-		for _, entry := range entries {
+		for _, entry := range net.Entries {
 			/*if entry.Rank == 0 || entry.Meta == 0 {
 				continue
 			}*/
@@ -666,7 +719,7 @@ func main() {
 		avg := sum / count
 		avg2 := sum2 / count
 		stddev, stddev2 := 0.0, 0.0
-		for _, entry := range entries {
+		for _, entry := range net.Entries {
 			/*if entry.Rank == 0 || entry.Meta == 0 {
 				continue
 			}*/
@@ -680,7 +733,7 @@ func main() {
 		stddev = math.Sqrt(stddev)
 		stddev2 = math.Sqrt(stddev2)
 		corr := 0.0
-		for _, entry := range entries {
+		for _, entry := range net.Entries {
 			/*if entry.Rank == 0 || entry.Meta == 0 {
 				continue
 			}*/

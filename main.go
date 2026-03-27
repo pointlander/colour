@@ -83,11 +83,31 @@ func Dot(a, b *[N * N]float64) float64 {
 	return sum
 }
 
+// Dot2 is the dot product
+func Dot2(a, b *[Width]float64) float64 {
+	sum := 0.0
+	for i, value := range a {
+		sum += value * b[i]
+	}
+	return sum
+}
+
 // CS implements cosine similarity
 func CS(a, b *[N * N]float64) float64 {
 	ab := Dot(a, b)
 	aa := Dot(a, a)
 	bb := Dot(b, b)
+	if aa == 0 || bb == 0 {
+		return 0
+	}
+	return ab / (math.Sqrt(aa) * math.Sqrt(bb))
+}
+
+// CS2 implements cosine similarity
+func CS2(a, b *[Width]float64) float64 {
+	ab := Dot2(a, b)
+	aa := Dot2(a, a)
+	bb := Dot2(b, b)
 	if aa == 0 || bb == 0 {
 		return 0
 	}
@@ -573,7 +593,7 @@ func main() {
 			fold = append(fold, len(net.Entries)/2)
 		}
 		for range 8 {
-			for range 8 * 1024 * 1024 {
+			for range 1024 * 1024 {
 				if rng.Float64() < entry[0].Rank[0]/u[0] {
 					total, selected, color := 0.0, rng.Float64(), 0
 					for j, value := range entry[0].Note {
@@ -626,6 +646,20 @@ func main() {
 					}
 					entry[i] = v.Link[index]
 				}
+			}
+			for i := range net.Entries {
+				distribution := make([]float64, 0, 8)
+				for _, next := range net.Entries[i].Link {
+					distribution = append(distribution, math.Abs(CS2(&net.Entries[i].Rank, &next.Rank)))
+				}
+				sum := 0.0
+				for _, value := range distribution {
+					sum += value
+				}
+				for i, value := range distribution {
+					distribution[i] = value / sum
+				}
+				net.Entries[i].Dist = distribution
 			}
 			/*for i := 1; i < Width; i++ {
 				net.Index = i

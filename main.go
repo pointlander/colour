@@ -160,8 +160,10 @@ var (
 	FlagIterations = flag.Int("i", 8, "number of iterations")
 	// FlagMarkov markov mode
 	FlagMarkov = flag.Bool("markov", false, "image mode")
-	// FlagSmith
+	// FlagSmith smith mode
 	FlagSmith = flag.Bool("smith", false, "smith mode")
+	// FlagGraph graphical mode
+	FlagGraph = flag.Bool("graph", false, "graph mode")
 )
 
 // MarkovMode is the image mode
@@ -497,19 +499,8 @@ func NewNet(rng *rand.Rand, size int) Net {
 	}
 }
 
-func main() {
-	flag.Parse()
-
-	if *FlagMarkov {
-		MarkovMode()
-		return
-	}
-
-	if *FlagSmith {
-		SmithMode()
-		return
-	}
-
+// GraphMode is the graphical model
+func GraphMode() {
 	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
 	if err != nil {
@@ -781,5 +772,24 @@ func main() {
 	err = p.Save(8*vg.Inch, 8*vg.Inch, "plot.png")
 	if err != nil {
 		panic(err)
+	}
+}
+
+func main() {
+	flag.Parse()
+
+	if *FlagMarkov {
+		MarkovMode()
+		return
+	}
+
+	if *FlagSmith {
+		SmithMode()
+		return
+	}
+
+	if *FlagGraph {
+		GraphMode()
+		return
 	}
 }

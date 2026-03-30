@@ -964,4 +964,44 @@ func main() {
 		GraphMode()
 		return
 	}
+
+	//rng := rand.New(rand.NewSource(1))
+	input, err := os.Open("images/image02.png")
+	if err != nil {
+		panic(err)
+	}
+	defer input.Close()
+	img, _, err := image.Decode(input)
+	if err != nil {
+		panic(err)
+	}
+	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
+	bounds := img.Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+	inputs := make([][]float64, (width/N)*(height/N))
+	fmt.Println(width/N, height/N)
+	for r := 0; r < height/N; r++ {
+		for c := 0; c < width/N; c++ {
+			colors := make([]float64, len(Notes))
+			for y := 0; y < N; y++ {
+				for x := 0; x < N; x++ {
+					clr := img.At(c*N+x, r*N+y)
+					for z := range Notes {
+						r, g, b, _ := clr.RGBA()
+						red := float64(Notes[z].R) - float64(r)
+						green := float64(Notes[z].G) - float64(g)
+						blue := float64(Notes[z].B) - float64(b)
+						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
+					}
+					gray := color.GrayModel.Convert(clr).(color.Gray)
+					inputs[y] = append(inputs[y], float64(gray.Y)*.001)
+				}
+			}
+		}
+	}
+
+	outputs := LearnEmbeddingIris(inputs, N*N, 7, 128)
+	for i := range outputs {
+		fmt.Println(outputs[i])
+	}
 }

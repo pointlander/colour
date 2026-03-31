@@ -1008,12 +1008,16 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	inputs, colour, links := make([][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N))
+	inputs, colour, links := make([][]float64, (width/N)*(height/N)), make([][][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N))
 	index := 0
 	fmt.Println(width/N, height/N)
+	states := make([]int, (width/N)*(height/N))
+	for i := range states {
+		states[i] = rng.Intn(len(Notes))
+	}
 	for r := 0; r < height/N; r++ {
 		for c := 0; c < width/N; c++ {
-			colors := make([]float64, len(Notes))
+			colors := make([][]float64, len(Notes))
 			for y := 0; y < N; y++ {
 				for x := 0; x < N; x++ {
 					clr := img.At(c*N+x, r*N+y)
@@ -1022,28 +1026,46 @@ func main() {
 						red := float64(Notes[z].R) - float64(r)
 						green := float64(Notes[z].G) - float64(g)
 						blue := float64(Notes[z].B) - float64(b)
-						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
+						colors[z] = append(colors[z], math.Sqrt(red*red+green*green+blue*blue))
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
 					inputs[index] = append(inputs[index], float64(gray.Y)*.001)
 				}
 			}
-			sum := 0.0
-			for _, value := range colors {
-				sum += value
+			for z := range colors {
+				sum := 0.0
+				for _, value := range colors[z] {
+					sum += value
+				}
+				for i := range colors[z] {
+					colors[z][i] /= sum
+				}
 			}
+			colour[index] = make([][]float64, len(colors))
 			for i := range colors {
-				colors[i] /= sum
+				for j := range colors {
+					distance := E2(colors[i], colors[j])
+					if distance > 0 {
+						distance = 1 / distance
+					}
+					colour[index][i] = append(colour[index][i], distance)
+				}
+				sum := 0.0
+				for j := range colour[index][i] {
+					sum += colour[index][i][j]
+				}
+				for j := range colour[index][i] {
+					colour[index][i][j] /= sum
+				}
 			}
-			colour[index] = colors
 			index++
 		}
 	}
-
 	outputs := LearnEmbeddingIris(inputs, N*N, 7, 128)
-	for i := range outputs {
+	/*for i := range outputs {
 		fmt.Println(outputs[i])
-	}
+	}*/
+
 	for i := range outputs {
 		for j := range outputs {
 			//fmt.Printf("%f ", CS3(outputs[i], outputs[j]))
@@ -1079,7 +1101,7 @@ func main() {
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
-		rest := 0
+		//rest := 0
 		for range 1024 {
 			total, selected := 0.0, rng.Float64()
 			for i := range links[index] {
@@ -1091,26 +1113,27 @@ func main() {
 			}
 
 			total, selected, color := 0.0, rng.Float64(), 0
-			for j, value := range colour[index] {
+			for j, value := range colour[index][states[index]] {
 				total += value
 				if selected < total {
+					states[index] = j
 					color = j
 					break
 				}
 			}
 
 			//fmt.Println(index, ranks[index])
-			if rng.Float64() < 100*ranks[index] {
-				wr.SetChannel(0)
-				wr.SetDelta(uint32(rest))
-				rest = 0
-				writer.NoteOn(wr, Notes[color].Note, 100)
-				wr.SetDelta(120)
-				writer.NoteOff(wr, Notes[color].Note)
-				wr.SetDelta(240)
-			} else {
+			//if rng.Float64() < 100*ranks[index] {
+			wr.SetChannel(0)
+			//wr.SetDelta(uint32(rest))
+			//rest = 0
+			writer.NoteOn(wr, Notes[color].Note, 100)
+			wr.SetDelta(120)
+			writer.NoteOff(wr, Notes[color].Note)
+			wr.SetDelta(240)
+			/*} else {
 				rest += 360
-			}
+			}*/
 		}
 		return nil
 	})

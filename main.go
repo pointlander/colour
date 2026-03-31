@@ -1018,6 +1018,13 @@ func main() {
 					inputs[index] = append(inputs[index], float64(gray.Y)*.001)
 				}
 			}
+			sum := 0.0
+			for _, value := range colors {
+				sum += value
+			}
+			for i := range colors {
+				colors[i] /= sum
+			}
 			colour[index] = colors
 			index++
 		}

@@ -94,6 +94,15 @@ func Dot2(a, b *[Width]float64) float64 {
 	return sum
 }
 
+// Dot3 is the dot product
+func Dot3(a, b []float64) float64 {
+	sum := 0.0
+	for i, value := range a {
+		sum += value * b[i]
+	}
+	return sum
+}
+
 // CS implements cosine similarity
 func CS(a, b *[N * N]float64) float64 {
 	ab := Dot(a, b)
@@ -110,6 +119,17 @@ func CS2(a, b *[Width]float64) float64 {
 	ab := Dot2(a, b)
 	aa := Dot2(a, a)
 	bb := Dot2(b, b)
+	if aa == 0 || bb == 0 {
+		return 0
+	}
+	return ab / (math.Sqrt(aa) * math.Sqrt(bb))
+}
+
+// CS3 implements cosine similarity
+func CS3(a, b []float64) float64 {
+	ab := Dot3(a, b)
+	aa := Dot3(a, a)
+	bb := Dot3(b, b)
 	if aa == 0 || bb == 0 {
 		return 0
 	}
@@ -965,7 +985,7 @@ func main() {
 		return
 	}
 
-	//rng := rand.New(rand.NewSource(1))
+	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
 	if err != nil {
 		panic(err)
@@ -978,7 +998,8 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	inputs := make([][]float64, (width/N)*(height/N))
+	inputs, colour, links := make([][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N))
+	index := 0
 	fmt.Println(width/N, height/N)
 	for r := 0; r < height/N; r++ {
 		for c := 0; c < width/N; c++ {
@@ -994,14 +1015,61 @@ func main() {
 						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
-					inputs[y] = append(inputs[y], float64(gray.Y)*.001)
+					inputs[index] = append(inputs[index], float64(gray.Y)*.001)
 				}
 			}
+			colour[index] = colors
+			index++
 		}
 	}
 
 	outputs := LearnEmbeddingIris(inputs, N*N, 7, 128)
 	for i := range outputs {
 		fmt.Println(outputs[i])
+	}
+	for i := range outputs {
+		for j := range outputs {
+			links[i] = append(links[i], math.Abs(CS3(outputs[i], outputs[j])))
+		}
+		sum := 0.0
+		for j := range links[i] {
+			sum += links[i][j]
+		}
+		for j := range links[i] {
+			links[i][j] /= sum
+		}
+	}
+
+	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
+		index := 0
+		for range 1024 {
+			total, selected := 0.0, rng.Float64()
+			for i := range links[index] {
+				total += links[index][i]
+				if total < selected {
+					index = i
+					break
+				}
+			}
+
+			total, selected, color := 0.0, rng.Float64(), 0
+			for j, value := range colour[index] {
+				total += value
+				if selected < total {
+					color = j
+					break
+				}
+			}
+
+			wr.SetChannel(0)
+			writer.NoteOn(wr, Notes[color].Note, 100)
+			wr.SetDelta(120)
+			writer.NoteOff(wr, Notes[color].Note)
+			wr.SetDelta(240)
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
 	}
 }

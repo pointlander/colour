@@ -1047,6 +1047,17 @@ func main() {
 		}
 	}
 
+	ranks := make([]float64, len(links))
+	graph := pagerank.NewGraph(len(links), rng)
+	for i := range links {
+		for j := range links {
+			graph.Link(uint32(i), uint32(j), links[i][j])
+		}
+	}
+	graph.Rank(1, .000001, func(id int, rank float64) {
+		ranks[id] = rank
+	})
+
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
 		for range 1024 {
@@ -1068,11 +1079,16 @@ func main() {
 				}
 			}
 
-			wr.SetChannel(0)
-			writer.NoteOn(wr, Notes[color].Note, 100)
-			wr.SetDelta(120)
-			writer.NoteOff(wr, Notes[color].Note)
-			wr.SetDelta(240)
+			if rng.Float64() < 7*ranks[index] {
+				wr.SetChannel(0)
+				writer.NoteOn(wr, Notes[color].Note, 100)
+				wr.SetDelta(120)
+				writer.NoteOff(wr, Notes[color].Note)
+				wr.SetDelta(240)
+			} else {
+				wr.SetChannel(0)
+				wr.SetDelta(360)
+			}
 		}
 		return nil
 	})

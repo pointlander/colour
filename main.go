@@ -1079,6 +1079,7 @@ func main() {
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
+		rest := 0
 		for range 1024 {
 			total, selected := 0.0, rng.Float64()
 			for i := range links[index] {
@@ -1099,15 +1100,16 @@ func main() {
 			}
 
 			//fmt.Println(index, ranks[index])
-			if rng.Float64() < 7*ranks[index] {
+			if rng.Float64() < 100*ranks[index] {
 				wr.SetChannel(0)
+				wr.SetDelta(uint32(rest))
+				rest = 0
 				writer.NoteOn(wr, Notes[color].Note, 100)
 				wr.SetDelta(120)
 				writer.NoteOff(wr, Notes[color].Note)
 				wr.SetDelta(240)
 			} else {
-				wr.SetChannel(0)
-				wr.SetDelta(360)
+				rest += 360
 			}
 		}
 		return nil

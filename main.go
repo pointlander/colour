@@ -136,6 +136,16 @@ func CS3(a, b []float64) float64 {
 	return ab / (math.Sqrt(aa) * math.Sqrt(bb))
 }
 
+// E2 is the squared euclidean distance
+func E2(a, b []float64) float64 {
+	sum := 0.0
+	for i, v := range a {
+		diff := v - b[i]
+		sum += diff * diff
+	}
+	return sum
+}
+
 const (
 	// Size is the size of the universe
 	Size = 128
@@ -1036,8 +1046,14 @@ func main() {
 	}
 	for i := range outputs {
 		for j := range outputs {
-			links[i] = append(links[i], math.Abs(CS3(outputs[i], outputs[j])))
+			//fmt.Printf("%f ", CS3(outputs[i], outputs[j]))
+			distance := E2(outputs[i], outputs[j])
+			if distance > 0 {
+				distance = 1 / distance
+			}
+			links[i] = append(links[i], distance)
 		}
+		//fmt.Println()
 		sum := 0.0
 		for j := range links[i] {
 			sum += links[i][j]
@@ -1050,6 +1066,7 @@ func main() {
 	ranks := make([]float64, len(links))
 	graph := pagerank.NewGraph(len(links), rng)
 	for i := range links {
+		//fmt.Println(links[i])
 		for j := range links {
 			graph.Link(uint32(i), uint32(j), links[i][j])
 		}
@@ -1058,13 +1075,15 @@ func main() {
 		ranks[id] = rank
 	})
 
+	//fmt.Println(ranks)
+
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
 		for range 1024 {
 			total, selected := 0.0, rng.Float64()
 			for i := range links[index] {
 				total += links[index][i]
-				if total < selected {
+				if selected < total {
 					index = i
 					break
 				}
@@ -1079,6 +1098,7 @@ func main() {
 				}
 			}
 
+			//fmt.Println(index, ranks[index])
 			if rng.Float64() < 7*ranks[index] {
 				wr.SetChannel(0)
 				writer.NoteOn(wr, Notes[color].Note, 100)

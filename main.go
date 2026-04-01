@@ -1067,6 +1067,9 @@ func main() {
 					colour[index][i][j] /= sum
 				}
 			}
+			for range colors {
+				colour[index][len(colors)] = append(colour[index][len(colors)], 1.0/float64(len(Notes)-1))
+			}
 			index++
 		}
 	}

@@ -157,23 +157,29 @@ const (
 type Colour struct {
 	R, G, B uint32
 	Note    uint8
+	Rest    bool
 }
 
-var Notes = []Colour{
+// Number is the number of notes
+const Number = 8
+
+var Notes = [Number]Colour{
 	// red
-	{0xffff, 0, 0, 62},
+	{0xffff, 0, 0, 62, false},
 	// orange
-	{0xffff, 0xa5a5, 0, 64},
+	{0xffff, 0xa5a5, 0, 64, false},
 	// yellow
-	{0xffff, 0xffff, 0, 65},
+	{0xffff, 0xffff, 0, 65, false},
 	// green
-	{0, 0xffff, 0, 67},
+	{0, 0xffff, 0, 67, false},
 	// blue
-	{0, 0, 0xffff, 69},
+	{0, 0, 0xffff, 69, false},
 	// indigo
-	{0x4b4b, 0, 0x8282, 71},
+	{0x4b4b, 0, 0x8282, 71, false},
 	// violet
-	{0x7f00, 0, 0xffff, 60},
+	{0x7f00, 0, 0xffff, 60, false},
+	// rest
+	{0, 0, 0, 0, true},
 }
 
 // State is the state of the markov model
@@ -216,7 +222,7 @@ func MarkovMode() {
 	type Entry struct {
 		DCT  [N * N]float64
 		Rank float64
-		Note [7]float64
+		Note [Number]float64
 	}
 	entries := make([]Entry, (width/N)*(height/N))
 	fmt.Println(width/N, height/N)
@@ -262,7 +268,7 @@ func MarkovMode() {
 	for i := range entries {
 		fmt.Println(i, entries[i].Rank, entries[i].Note)
 	}
-	markov := make(map[State][]Entry, 7)
+	markov := make(map[State][]Entry, Number)
 	var learn func(entries []Entry, state State, depth, max int)
 	learn = func(entries []Entry, state State, depth, max int) {
 		if depth > max || len(entries) == 0 {
@@ -272,7 +278,7 @@ func MarkovMode() {
 		for i := range entries {
 			vectors[i] = entries[i].DCT[:]
 		}
-		clusters, _, err := kmeans.Kmeans(1, vectors, 7, kmeans.SquaredEuclideanDistance, -1)
+		clusters, _, err := kmeans.Kmeans(1, vectors, Number, kmeans.SquaredEuclideanDistance, -1)
 		if err != nil {
 			panic(err)
 		}
@@ -280,7 +286,7 @@ func MarkovMode() {
 			state[depth] = byte(clusters[i])
 			markov[state] = append(markov[state], entries[i])
 		}
-		for i := range 7 {
+		for i := range Number {
 			state[depth] = byte(i)
 			learn(markov[state], state, depth+1, max)
 		}
@@ -488,7 +494,7 @@ type Entry struct {
 	Addr int
 	DCT  [N * N]float64
 	Rank [Width]float64
-	Note [7]float64
+	Note [Number]float64
 	Link []*Entry
 	Dist []float64
 }
@@ -1017,11 +1023,11 @@ func main() {
 	}
 	for r := 0; r < height/N; r++ {
 		for c := 0; c < width/N; c++ {
-			colors := make([][]float64, len(Notes))
+			colors := make([][]float64, len(Notes)-1)
 			for y := 0; y < N; y++ {
 				for x := 0; x < N; x++ {
 					clr := img.At(c*N+x, r*N+y)
-					for z := range Notes {
+					for z := range Notes[:len(Notes)-1] {
 						r, g, b, _ := clr.RGBA()
 						red := float64(Notes[z].R) - float64(r)
 						green := float64(Notes[z].G) - float64(g)
@@ -1041,7 +1047,7 @@ func main() {
 					colors[z][i] /= sum
 				}
 			}
-			colour[index] = make([][]float64, len(colors))
+			colour[index] = make([][]float64, len(colors)+1)
 			for i := range colors {
 				for j := range colors {
 					distance := E2(colors[i], colors[j])
@@ -1054,6 +1060,9 @@ func main() {
 				for j := range colour[index][i] {
 					sum += colour[index][i][j]
 				}
+				rest := sum / float64(len(Notes)-1)
+				colour[index][i] = append(colour[index][i], rest)
+				sum += rest
 				for j := range colour[index][i] {
 					colour[index][i][j] /= sum
 				}
@@ -1123,17 +1132,16 @@ func main() {
 			}
 
 			//fmt.Println(index, ranks[index])
-			//if rng.Float64() < 100*ranks[index] {
-			wr.SetChannel(0)
-			//wr.SetDelta(uint32(rest))
-			//rest = 0
-			writer.NoteOn(wr, Notes[color].Note, 100)
-			wr.SetDelta(120)
-			writer.NoteOff(wr, Notes[color].Note)
-			wr.SetDelta(240)
-			/*} else {
-				rest += 360
-			}*/
+			if !Notes[color].Rest {
+				wr.SetChannel(0)
+				writer.NoteOn(wr, Notes[color].Note, 100)
+				wr.SetDelta(120)
+				writer.NoteOff(wr, Notes[color].Note)
+				wr.SetDelta(240)
+			} else {
+				wr.SetChannel(0)
+				wr.SetDelta(369)
+			}
 		}
 		return nil
 	})

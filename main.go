@@ -1079,7 +1079,7 @@ func main() {
 			index++
 		}
 	}
-	outputs := LearnEmbeddingIris(inputs, N*N, 7, 128)
+	outputs := LearnEmbeddingIris(inputs, N*N, 2, 128)
 	/*for i := range outputs {
 		fmt.Println(outputs[i])
 	}*/

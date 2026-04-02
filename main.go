@@ -1014,7 +1014,11 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	inputs, colour, links := make([][]float64, (width/N)*(height/N)), make([][][]float64, (width/N)*(height/N)), make([][]float64, (width/N)*(height/N))
+	inputs, colour, links, intensity :=
+		make([][]float64, (width/N)*(height/N)),
+		make([][][]float64, (width/N)*(height/N)),
+		make([][]float64, (width/N)*(height/N)),
+		make([]float64, (width/N)*(height/N))
 	index := 0
 	fmt.Println(width/N, height/N)
 	states := make([]int, (width/N)*(height/N))
@@ -1036,6 +1040,7 @@ func main() {
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
 					inputs[index] = append(inputs[index], float64(gray.Y)*.001)
+					intensity[index] += float64(gray.Y)
 				}
 			}
 			for z := range colors {
@@ -1070,6 +1075,7 @@ func main() {
 			for range colors {
 				colour[index][len(colors)] = append(colour[index][len(colors)], 1.0/float64(len(Notes)-1))
 			}
+			intensity[index] /= float64(N * N * 255)
 			index++
 		}
 	}
@@ -1137,7 +1143,7 @@ func main() {
 			//fmt.Println(index, ranks[index])
 			if !Notes[color].Rest {
 				wr.SetChannel(0)
-				writer.NoteOn(wr, Notes[color].Note, 100)
+				writer.NoteOn(wr, Notes[color].Note, uint8(2*intensity[index]*100))
 				wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 				writer.NoteOff(wr, Notes[color].Note)
 				wr.SetDelta(240)

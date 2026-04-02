@@ -1138,12 +1138,12 @@ func main() {
 			if !Notes[color].Rest {
 				wr.SetChannel(0)
 				writer.NoteOn(wr, Notes[color].Note, 100)
-				wr.SetDelta(120)
+				wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 				writer.NoteOff(wr, Notes[color].Note)
 				wr.SetDelta(240)
 			} else {
 				wr.SetChannel(0)
-				wr.SetDelta(369)
+				wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 			}
 		}
 		return nil

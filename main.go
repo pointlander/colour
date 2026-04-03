@@ -160,26 +160,140 @@ type Colour struct {
 	Rest    bool
 }
 
-// Number is the number of notes
-const Number = 8
+const (
+	// Number is the number of notes
+	Number = 8
+	// Middles is the middle notes
+	Middle = 3
+)
 
-var Notes = [Number]Colour{
-	// C4 violet
-	{0x7f00, 0, 0xffff, 60, false},
-	// D4 red
-	{0xffff, 0, 0, 62, false},
-	// E4 orange
-	{0xffff, 0xa5a5, 0, 64, false},
-	// F4 yellow
-	{0xffff, 0xffff, 0, 65, false},
-	// G4 green
-	{0, 0xffff, 0, 67, false},
-	// A4 blue
-	{0, 0, 0xffff, 69, false},
-	// B4 indigo
-	{0x4b4b, 0, 0x8282, 71, false},
-	// rest
-	{0, 0, 0, 0, true},
+var Notes = [Number - 1][Number]Colour{
+	{
+		// C1 violet
+		{0x7f00, 0, 0xffff, 24, false},
+		// D1 red
+		{0xffff, 0, 0, 26, false},
+		// E1 orange
+		{0xffff, 0xa5a5, 0, 28, false},
+		// F1 yellow
+		{0xffff, 0xffff, 0, 29, false},
+		// G1 green
+		{0, 0xffff, 0, 31, false},
+		// A1 blue
+		{0, 0, 0xffff, 33, false},
+		// B1 indigo
+		{0x4b4b, 0, 0x8282, 35, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C2 violet
+		{0x7f00, 0, 0xffff, 36, false},
+		// D2 red
+		{0xffff, 0, 0, 38, false},
+		// E2 orange
+		{0xffff, 0xa5a5, 0, 40, false},
+		// F2 yellow
+		{0xffff, 0xffff, 0, 41, false},
+		// G2 green
+		{0, 0xffff, 0, 43, false},
+		// A2 blue
+		{0, 0, 0xffff, 45, false},
+		// B2 indigo
+		{0x4b4b, 0, 0x8282, 47, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C3 violet
+		{0x7f00, 0, 0xffff, 48, false},
+		// D3 red
+		{0xffff, 0, 0, 50, false},
+		// E3 orange
+		{0xffff, 0xa5a5, 0, 52, false},
+		// F3 yellow
+		{0xffff, 0xffff, 0, 53, false},
+		// G3 green
+		{0, 0xffff, 0, 55, false},
+		// A3 blue
+		{0, 0, 0xffff, 67, false},
+		// B3 indigo
+		{0x4b4b, 0, 0x8282, 59, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C4 violet
+		{0x7f00, 0, 0xffff, 60, false},
+		// D4 red
+		{0xffff, 0, 0, 62, false},
+		// E4 orange
+		{0xffff, 0xa5a5, 0, 64, false},
+		// F4 yellow
+		{0xffff, 0xffff, 0, 65, false},
+		// G4 green
+		{0, 0xffff, 0, 67, false},
+		// A4 blue
+		{0, 0, 0xffff, 69, false},
+		// B4 indigo
+		{0x4b4b, 0, 0x8282, 71, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C5 violet
+		{0x7f00, 0, 0xffff, 72, false},
+		// D5 red
+		{0xffff, 0, 0, 74, false},
+		// E5 orange
+		{0xffff, 0xa5a5, 0, 76, false},
+		// F5 yellow
+		{0xffff, 0xffff, 0, 77, false},
+		// G5 green
+		{0, 0xffff, 0, 79, false},
+		// A5 blue
+		{0, 0, 0xffff, 81, false},
+		// B5 indigo
+		{0x4b4b, 0, 0x8282, 83, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C6 violet
+		{0x7f00, 0, 0xffff, 84, false},
+		// D6 red
+		{0xffff, 0, 0, 86, false},
+		// E6 orange
+		{0xffff, 0xa5a5, 0, 88, false},
+		// F6 yellow
+		{0xffff, 0xffff, 0, 89, false},
+		// G6 green
+		{0, 0xffff, 0, 91, false},
+		// A6 blue
+		{0, 0, 0xffff, 93, false},
+		// B6 indigo
+		{0x4b4b, 0, 0x8282, 95, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
+	{
+		// C7 violet
+		{0x7f00, 0, 0xffff, 96, false},
+		// D7 red
+		{0xffff, 0, 0, 98, false},
+		// E7 orange
+		{0xffff, 0xa5a5, 0, 100, false},
+		// F7 yellow
+		{0xffff, 0xffff, 0, 101, false},
+		// G7 green
+		{0, 0xffff, 0, 103, false},
+		// A7 blue
+		{0, 0, 0xffff, 105, false},
+		// B7 indigo
+		{0x4b4b, 0, 0x8282, 107, false},
+		// rest
+		{0, 0, 0, 0, true},
+	},
 }
 
 // State is the state of the markov model
@@ -236,9 +350,9 @@ func MarkovMode() {
 					clr := img.At(c*N+x, r*N+y)
 					for z := range Notes {
 						r, g, b, _ := clr.RGBA()
-						red := float64(Notes[z].R) - float64(r)
-						green := float64(Notes[z].G) - float64(g)
-						blue := float64(Notes[z].B) - float64(b)
+						red := float64(Notes[Middle][z].R) - float64(r)
+						green := float64(Notes[Middle][z].G) - float64(g)
+						blue := float64(Notes[Middle][z].B) - float64(b)
 						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
@@ -302,7 +416,7 @@ func MarkovMode() {
 	}
 	table := make(map[uint8]int)
 	for i := range Notes {
-		table[Notes[i].Note] = i
+		table[Notes[Middle][i].Note] = i
 	}
 	learn(entries, State{}, 0, Order-1)
 
@@ -336,9 +450,9 @@ func MarkovMode() {
 			}
 
 			wr.SetChannel(0)
-			writer.NoteOn(wr, Notes[color].Note, 100)
+			writer.NoteOn(wr, Notes[Middle][color].Note, 100)
 			wr.SetDelta(120)
-			writer.NoteOff(wr, Notes[color].Note)
+			writer.NoteOff(wr, Notes[Middle][color].Note)
 			wr.SetDelta(240)
 			state = state.Next(byte(color))
 		}
@@ -565,9 +679,9 @@ func GraphMode() {
 					clr := img.At(c*N+x, r*N+y)
 					for z := range Notes {
 						r, g, b, _ := clr.RGBA()
-						red := float64(Notes[z].R) - float64(r)
-						green := float64(Notes[z].G) - float64(g)
-						blue := float64(Notes[z].B) - float64(b)
+						red := float64(Notes[Middle][z].R) - float64(r)
+						green := float64(Notes[Middle][z].G) - float64(g)
+						blue := float64(Notes[Middle][z].B) - float64(b)
 						colors[z] += math.Sqrt(red*red + green*green + blue*blue)
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
@@ -634,9 +748,9 @@ func GraphMode() {
 					}
 
 					wr.SetChannel(0)
-					writer.NoteOn(wr, Notes[color].Note, 100)
+					writer.NoteOn(wr, Notes[Middle][color].Note, 100)
 					wr.SetDelta(120)
-					writer.NoteOff(wr, Notes[color].Note)
+					writer.NoteOff(wr, Notes[Middle][color].Note)
 					wr.SetDelta(240)
 				}
 				entry[0].Rank[0]++
@@ -740,7 +854,7 @@ func GraphMode() {
 		}
 		scatter.GlyphStyle.Radius = vg.Length(1)
 		scatter.GlyphStyle.Shape = draw.CircleGlyph{}
-		note := Notes[i%len(Notes)]
+		note := Notes[Middle][i%len(Notes)]
 		scatter.GlyphStyle.Color = color.RGBA{
 			R: uint8(note.R >> 8),
 			G: uint8(note.G >> 8),
@@ -1014,8 +1128,9 @@ func main() {
 	img = resize.Resize(uint(img.Bounds().Max.X/Scale), uint(img.Bounds().Max.Y/Scale), img, resize.NearestNeighbor)
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
-	inputs, colour, links, intensity :=
+	inputs, colour, metacolour, links, intensity :=
 		make([][]float64, (width/N)*(height/N)),
+		make([][][]float64, (width/N)*(height/N)),
 		make([][][]float64, (width/N)*(height/N)),
 		make([][]float64, (width/N)*(height/N)),
 		make([]float64, (width/N)*(height/N))
@@ -1025,6 +1140,10 @@ func main() {
 	for i := range states {
 		states[i] = rng.Intn(len(Notes))
 	}
+	metas := make([]int, (width/N)*(height/N))
+	for i := range metas {
+		metas[i] = rng.Intn(len(Notes) - 1)
+	}
 	for r := 0; r < height/N; r++ {
 		for c := 0; c < width/N; c++ {
 			colors := make([][]float64, len(Notes)-1)
@@ -1033,9 +1152,9 @@ func main() {
 					clr := img.At(c*N+x, r*N+y)
 					for z := range Notes[:len(Notes)-1] {
 						r, g, b, _ := clr.RGBA()
-						red := float64(Notes[z].R) - float64(r)
-						green := float64(Notes[z].G) - float64(g)
-						blue := float64(Notes[z].B) - float64(b)
+						red := float64(Notes[Middle][z].R) - float64(r)
+						green := float64(Notes[Middle][z].G) - float64(g)
+						blue := float64(Notes[Middle][z].B) - float64(b)
 						colors[z] = append(colors[z], math.Sqrt(red*red+green*green+blue*blue))
 					}
 					gray := color.GrayModel.Convert(clr).(color.Gray)
@@ -1053,6 +1172,7 @@ func main() {
 				}
 			}
 			colour[index] = make([][]float64, len(colors)+1)
+			metacolour[index] = make([][]float64, len(colors))
 			for i := range colors {
 				for j := range colors {
 					distance := E2(colors[i], colors[j])
@@ -1060,6 +1180,7 @@ func main() {
 						distance = 1 / distance
 					}
 					colour[index][i] = append(colour[index][i], distance)
+					metacolour[index][i] = append(metacolour[index][i], distance)
 				}
 				sum := 0.0
 				for j := range colour[index][i] {
@@ -1071,9 +1192,17 @@ func main() {
 				for j := range colour[index][i] {
 					colour[index][i][j] /= sum
 				}
+
+				sum = 0.0
+				for j := range metacolour[index][i] {
+					sum += metacolour[index][i][j]
+				}
+				for j := range metacolour[index][i] {
+					metacolour[index][i][j] /= sum
+				}
 			}
 			for range colors {
-				colour[index][len(colors)] = append(colour[index][len(colors)], 1.0/float64(len(Notes)-1))
+				colour[index][len(colors)] = append(colour[index][len(colors)], 1.0/float64(len(Notes[Middle])-1))
 			}
 			intensity[index] /= float64(N * N * 255)
 			index++
@@ -1119,6 +1248,7 @@ func main() {
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
+		meta := 0
 		//rest := 0
 		for range 1024 {
 			total, selected := 0.0, rng.Float64()
@@ -1126,6 +1256,25 @@ func main() {
 				total += links[index][i]
 				if selected < total {
 					index = i
+					break
+				}
+			}
+
+			total, selected = 0.0, rng.Float64()
+			for i := range links[meta] {
+				total += links[meta][i]
+				if selected < total {
+					meta = i
+					break
+				}
+			}
+
+			total, selected, metacolor := 0.0, rng.Float64(), 0
+			for j, value := range metacolour[meta][metas[meta]] {
+				total += value
+				if selected < total {
+					metas[meta] = j
+					metacolor = j
 					break
 				}
 			}
@@ -1141,11 +1290,11 @@ func main() {
 			}
 
 			//fmt.Println(index, ranks[index])
-			if !Notes[color].Rest {
+			if !Notes[Middle][color].Rest {
 				wr.SetChannel(0)
-				writer.NoteOn(wr, Notes[color].Note, uint8(2*intensity[index]*100))
+				writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(2*intensity[index]*100))
 				wr.SetDelta(uint32(120 * 1000 * ranks[index]))
-				writer.NoteOff(wr, Notes[color].Note)
+				writer.NoteOff(wr, Notes[metacolor][color].Note)
 				wr.SetDelta(240)
 			} else {
 				wr.SetChannel(0)

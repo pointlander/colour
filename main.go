@@ -164,20 +164,20 @@ type Colour struct {
 const Number = 8
 
 var Notes = [Number]Colour{
-	// red
-	{0xffff, 0, 0, 62, false},
-	// orange
-	{0xffff, 0xa5a5, 0, 64, false},
-	// yellow
-	{0xffff, 0xffff, 0, 65, false},
-	// green
-	{0, 0xffff, 0, 67, false},
-	// blue
-	{0, 0, 0xffff, 69, false},
-	// indigo
-	{0x4b4b, 0, 0x8282, 71, false},
-	// violet
+	// C4 violet
 	{0x7f00, 0, 0xffff, 60, false},
+	// D4 red
+	{0xffff, 0, 0, 62, false},
+	// E4 orange
+	{0xffff, 0xa5a5, 0, 64, false},
+	// F4 yellow
+	{0xffff, 0xffff, 0, 65, false},
+	// G4 green
+	{0, 0xffff, 0, 67, false},
+	// A4 blue
+	{0, 0, 0xffff, 69, false},
+	// B4 indigo
+	{0x4b4b, 0, 0x8282, 71, false},
 	// rest
 	{0, 0, 0, 0, true},
 }

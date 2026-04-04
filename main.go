@@ -1249,8 +1249,9 @@ func main() {
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
 		meta := 0
+		metacolor := Middle
 		//rest := 0
-		for range 1024 {
+		for iteration := range 1024 {
 			total, selected := 0.0, rng.Float64()
 			for i := range links[index] {
 				total += links[index][i]
@@ -1260,22 +1261,30 @@ func main() {
 				}
 			}
 
-			total, selected = 0.0, rng.Float64()
-			for i := range links[meta] {
-				total += links[meta][i]
-				if selected < total {
-					meta = i
-					break
+			if iteration%4 == 0 {
+				total, selected := 0.0, rng.Float64()
+				for i := range links[meta] {
+					total += links[meta][i]
+					if selected < total {
+						meta = i
+						break
+					}
 				}
-			}
 
-			total, selected, metacolor := 0.0, rng.Float64(), 0
-			for j, value := range metacolour[meta][metas[meta]] {
-				total += value
-				if selected < total {
-					metas[meta] = j
-					metacolor = j
-					break
+				total, selected = 0.0, rng.Float64()
+				for j, value := range metacolour[meta][metas[meta]] {
+					total += value
+					if selected < total {
+						if j > metacolor {
+							metacolor++
+						} else if j < metacolor {
+							metacolor--
+						}
+						metas[meta] = metacolor
+						//metacolor = j
+						//metas[meta] = j
+						break
+					}
 				}
 			}
 
@@ -1290,9 +1299,14 @@ func main() {
 			}
 
 			//fmt.Println(index, ranks[index])
-			if !Notes[Middle][color].Rest {
+			if !Notes[metacolor][color].Rest {
 				wr.SetChannel(0)
-				writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(2*intensity[index]*100))
+				/*i := 4 * intensity[index] * 100
+				if i > 100 {
+					i = 100
+				}*/
+				//fmt.Println("i", i)
+				writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(100))
 				wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 				writer.NoteOff(wr, Notes[metacolor][color].Note)
 				wr.SetDelta(240)

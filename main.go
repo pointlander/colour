@@ -1245,6 +1245,19 @@ func main() {
 	})
 
 	//fmt.Println(ranks)
+	const Order = 2
+	type Context struct {
+		X byte
+		Y byte
+	}
+	type State [Order]Context
+	type Entry struct {
+		X     byte
+		Y     byte
+		Count byte
+	}
+	markov := make(map[State][]Entry)
+	var state State
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
 		index := 0
@@ -1306,14 +1319,55 @@ func main() {
 					i = 100
 				}*/
 				//fmt.Println("i", i)
-				writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(100))
-				wr.SetDelta(uint32(120 * 1000 * ranks[index]))
-				writer.NoteOff(wr, Notes[metacolor][color].Note)
-				wr.SetDelta(240)
+				entries := markov[state]
+				if entries != nil && rng.Intn(4) == 0 {
+					sum := 0.0
+					for _, entry := range entries {
+						sum += float64(entry.Count)
+					}
+					for range 4 {
+						total, selected := 0.0, rng.Float64()
+						for _, entry := range entries {
+							total += float64(entry.Count) / sum
+							if selected < total {
+								writer.NoteOn(wr, Notes[entry.X][entry.Y].Note, uint8(100))
+								wr.SetDelta(uint32(120 * 1000 * ranks[index]))
+								writer.NoteOff(wr, Notes[entry.X][entry.Y].Note)
+								wr.SetDelta(240)
+								break
+							}
+						}
+					}
+				} else {
+					writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(100))
+					wr.SetDelta(uint32(120 * 1000 * ranks[index]))
+					writer.NoteOff(wr, Notes[metacolor][color].Note)
+					wr.SetDelta(240)
+				}
 			} else {
 				wr.SetChannel(0)
 				wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 			}
+			entries := markov[state]
+			if entries == nil {
+				entries = make([]Entry, 7*8)
+				index := 0
+				for x := range 7 {
+					for y := range 8 {
+						entries[index].X = byte(x)
+						entries[index].Y = byte(y)
+						index++
+					}
+				}
+			}
+			for _, entry := range entries {
+				if entry.X == byte(metacolor) && entry.Y == byte(color) {
+					entry.Count++
+					break
+				}
+			}
+			markov[state] = entries
+			state[0], state[1] = state[1], state[0]
 		}
 		return nil
 	})

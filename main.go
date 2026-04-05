@@ -1260,6 +1260,7 @@ func main() {
 	var state State
 
 	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
+		wr.ConsolidateNotes(false)
 		index := 0
 		meta := 0
 		metacolor := Middle

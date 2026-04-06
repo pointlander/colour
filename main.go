@@ -296,6 +296,21 @@ var Notes = [Number - 1][Number]Colour{
 	},
 }
 
+func init() {
+	for i := range Notes {
+		length := len(Notes[i]) - 1
+		var r, g, b uint32
+		for j := range Notes[i][:length] {
+			r += Notes[i][j].R
+			g += Notes[i][j].G
+			b += Notes[i][j].B
+		}
+		Notes[i][length].R = r / uint32(length)
+		Notes[i][length].G = g / uint32(length)
+		Notes[i][length].B = b / uint32(length)
+	}
+}
+
 // State is the state of the markov model
 type State [Order]byte
 
@@ -1146,11 +1161,11 @@ func main() {
 	}
 	for r := 0; r < height/N; r++ {
 		for c := 0; c < width/N; c++ {
-			colors := make([][]float64, len(Notes)-1)
+			colors := make([][]float64, len(Notes[Middle]))
 			for y := 0; y < N; y++ {
 				for x := 0; x < N; x++ {
 					clr := img.At(c*N+x, r*N+y)
-					for z := range Notes[:len(Notes)-1] {
+					for z := range Notes[Middle] {
 						r, g, b, _ := clr.RGBA()
 						red := float64(Notes[Middle][z].R) - float64(r)
 						green := float64(Notes[Middle][z].G) - float64(g)
@@ -1171,7 +1186,7 @@ func main() {
 					colors[z][i] /= sum
 				}
 			}
-			colour[index] = make([][]float64, len(colors)+1)
+			colour[index] = make([][]float64, len(colors))
 			metacolour[index] = make([][]float64, len(colors))
 			for i := range colors {
 				for j := range colors {
@@ -1186,9 +1201,6 @@ func main() {
 				for j := range colour[index][i] {
 					sum += colour[index][i][j]
 				}
-				rest := sum / float64(len(Notes)-1)
-				colour[index][i] = append(colour[index][i], rest)
-				sum += rest
 				for j := range colour[index][i] {
 					colour[index][i][j] /= sum
 				}
@@ -1200,9 +1212,6 @@ func main() {
 				for j := range metacolour[index][i] {
 					metacolour[index][i][j] /= sum
 				}
-			}
-			for range colors {
-				colour[index][len(colors)] = append(colour[index][len(colors)], 1.0/float64(len(Notes[Middle])-1))
 			}
 			intensity[index] /= float64(N * N * 255)
 			index++
@@ -1313,43 +1322,52 @@ func main() {
 			}
 
 			//fmt.Println(index, ranks[index])
-			if !Notes[metacolor][color].Rest {
-				wr.SetChannel(0)
-				/*i := 4 * intensity[index] * 100
-				if i > 100 {
-					i = 100
-				}*/
-				//fmt.Println("i", i)
-				entries := markov[state]
-				if entries != nil && rng.Intn(4) == 0 {
-					sum := 0.0
+			entries := markov[state]
+			if entries != nil && rng.Intn(4) == 0 {
+				sum := 0.0
+				for _, entry := range entries {
+					sum += float64(entry.Count)
+				}
+				for range 4 {
+					total, selected := 0.0, rng.Float64()
 					for _, entry := range entries {
-						sum += float64(entry.Count)
-					}
-					for range 4 {
-						total, selected := 0.0, rng.Float64()
-						for _, entry := range entries {
-							total += float64(entry.Count) / sum
-							if selected < total {
+						total += float64(entry.Count) / sum
+						if selected < total {
+							if !Notes[entry.X][entry.Y].Rest {
+								fmt.Println("a note")
 								writer.NoteOn(wr, Notes[entry.X][entry.Y].Note, uint8(100))
 								wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 								writer.NoteOff(wr, Notes[entry.X][entry.Y].Note)
 								wr.SetDelta(240)
-								break
+							} else {
+								fmt.Println("a rest")
+								wr.SetChannel(0)
+								wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 							}
+							break
 						}
 					}
-				} else {
+				}
+			} else {
+				if !Notes[metacolor][color].Rest {
+					fmt.Println("b note")
+					wr.SetChannel(0)
+					/*i := 4 * intensity[index] * 100
+					if i > 100 {
+						i = 100
+					}*/
+					//fmt.Println("i", i)
+
 					writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(100))
 					wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 					writer.NoteOff(wr, Notes[metacolor][color].Note)
 					wr.SetDelta(240)
+				} else {
+					fmt.Println("b rest")
+					wr.SetChannel(0)
+					wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 				}
-			} else {
-				wr.SetChannel(0)
-				wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 			}
-			entries := markov[state]
 			if entries == nil {
 				entries = make([]Entry, 7*8)
 				index := 0
@@ -1361,14 +1379,14 @@ func main() {
 					}
 				}
 			}
-			for _, entry := range entries {
+			for i, entry := range entries {
 				if entry.X == byte(metacolor) && entry.Y == byte(color) {
-					entry.Count++
+					entries[i].Count++
 					break
 				}
 			}
 			markov[state] = entries
-			state[0], state[1] = state[1], state[0]
+			state[0], state[1] = state[1], Context{byte(metacolor), byte(color)}
 		}
 		return nil
 	})

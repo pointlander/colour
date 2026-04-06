@@ -14,12 +14,14 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 	//"sort"
 
 	"github.com/pointlander/colour/kmeans"
 	"github.com/pointlander/colour/pagerank"
 	"github.com/pointlander/gradient/tf64"
 
+	"github.com/ebitengine/oto/v3"
 	"github.com/nfnt/resize"
 	"gitlab.com/gomidi/midi/writer"
 	"gonum.org/v1/plot"
@@ -331,6 +333,8 @@ var (
 	FlagSmith = flag.Bool("smith", false, "smith mode")
 	// FlagGraph graphical mode
 	FlagGraph = flag.Bool("graph", false, "graph mode")
+	// FlagKey test key
+	FlagKey = flag.Bool("key", false, "test key")
 )
 
 // MarkovMode is the image mode
@@ -1127,6 +1131,22 @@ func main() {
 
 	if *FlagGraph {
 		GraphMode()
+		return
+	}
+
+	if *FlagKey {
+		op := &oto.NewContextOptions{}
+		op.SampleRate = 48000
+		op.ChannelCount = 2
+		op.Format = oto.FormatSignedInt16LE
+		context, ready, err := oto.NewContext(op)
+		if err != nil {
+			panic(err)
+		}
+		<-ready
+		p := context.NewPlayer(NewKey(523.3, 3*time.Second))
+		p.Play()
+		time.Sleep(3 * time.Second)
 		return
 	}
 

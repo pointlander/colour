@@ -160,6 +160,7 @@ type Colour struct {
 	R, G, B uint32
 	Note    uint8
 	Rest    bool
+	Freq    float64
 }
 
 const (
@@ -172,129 +173,129 @@ const (
 var Notes = [Number - 1][Number]Colour{
 	{
 		// C1 violet
-		{0x7f00, 0, 0xffff, 24, false},
+		{0x7f00, 0, 0xffff, 24, false, 32.70320},
 		// D1 red
-		{0xffff, 0, 0, 26, false},
+		{0xffff, 0, 0, 26, false, 36.70810},
 		// E1 orange
-		{0xffff, 0xa5a5, 0, 28, false},
+		{0xffff, 0xa5a5, 0, 28, false, 41.20344},
 		// F1 yellow
-		{0xffff, 0xffff, 0, 29, false},
+		{0xffff, 0xffff, 0, 29, false, 43.65353},
 		// G1 green
-		{0, 0xffff, 0, 31, false},
+		{0, 0xffff, 0, 31, false, 48.99943},
 		// A1 blue
-		{0, 0, 0xffff, 33, false},
+		{0, 0, 0xffff, 33, false, 55.00000},
 		// B1 indigo
-		{0x4b4b, 0, 0x8282, 35, false},
+		{0x4b4b, 0, 0x8282, 35, false, 61.73541},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C2 violet
-		{0x7f00, 0, 0xffff, 36, false},
+		{0x7f00, 0, 0xffff, 36, false, 65.40639},
 		// D2 red
-		{0xffff, 0, 0, 38, false},
+		{0xffff, 0, 0, 38, false, 73.41619},
 		// E2 orange
-		{0xffff, 0xa5a5, 0, 40, false},
+		{0xffff, 0xa5a5, 0, 40, false, 82.40689},
 		// F2 yellow
-		{0xffff, 0xffff, 0, 41, false},
+		{0xffff, 0xffff, 0, 41, false, 87.30706},
 		// G2 green
-		{0, 0xffff, 0, 43, false},
+		{0, 0xffff, 0, 43, false, 97.99886},
 		// A2 blue
-		{0, 0, 0xffff, 45, false},
+		{0, 0, 0xffff, 45, false, 110.0000},
 		// B2 indigo
-		{0x4b4b, 0, 0x8282, 47, false},
+		{0x4b4b, 0, 0x8282, 47, false, 123.4708},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C3 violet
-		{0x7f00, 0, 0xffff, 48, false},
+		{0x7f00, 0, 0xffff, 48, false, 130.8128},
 		// D3 red
-		{0xffff, 0, 0, 50, false},
+		{0xffff, 0, 0, 50, false, 146.8324},
 		// E3 orange
-		{0xffff, 0xa5a5, 0, 52, false},
+		{0xffff, 0xa5a5, 0, 52, false, 164.8138},
 		// F3 yellow
-		{0xffff, 0xffff, 0, 53, false},
+		{0xffff, 0xffff, 0, 53, false, 174.6141},
 		// G3 green
-		{0, 0xffff, 0, 55, false},
+		{0, 0xffff, 0, 55, false, 195.9977},
 		// A3 blue
-		{0, 0, 0xffff, 67, false},
+		{0, 0, 0xffff, 57, false, 220.0000},
 		// B3 indigo
-		{0x4b4b, 0, 0x8282, 59, false},
+		{0x4b4b, 0, 0x8282, 59, false, 246.9417},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C4 violet
-		{0x7f00, 0, 0xffff, 60, false},
+		{0x7f00, 0, 0xffff, 60, false, 261.6256},
 		// D4 red
-		{0xffff, 0, 0, 62, false},
+		{0xffff, 0, 0, 62, false, 293.6648},
 		// E4 orange
-		{0xffff, 0xa5a5, 0, 64, false},
+		{0xffff, 0xa5a5, 0, 64, false, 329.6276},
 		// F4 yellow
-		{0xffff, 0xffff, 0, 65, false},
+		{0xffff, 0xffff, 0, 65, false, 349.2282},
 		// G4 green
-		{0, 0xffff, 0, 67, false},
+		{0, 0xffff, 0, 67, false, 391.9954},
 		// A4 blue
-		{0, 0, 0xffff, 69, false},
+		{0, 0, 0xffff, 69, false, 440.0000},
 		// B4 indigo
-		{0x4b4b, 0, 0x8282, 71, false},
+		{0x4b4b, 0, 0x8282, 71, false, 493.8833},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C5 violet
-		{0x7f00, 0, 0xffff, 72, false},
+		{0x7f00, 0, 0xffff, 72, false, 523.2511},
 		// D5 red
-		{0xffff, 0, 0, 74, false},
+		{0xffff, 0, 0, 74, false, 587.3295},
 		// E5 orange
-		{0xffff, 0xa5a5, 0, 76, false},
+		{0xffff, 0xa5a5, 0, 76, false, 659.2551},
 		// F5 yellow
-		{0xffff, 0xffff, 0, 77, false},
+		{0xffff, 0xffff, 0, 77, false, 698.4565},
 		// G5 green
-		{0, 0xffff, 0, 79, false},
+		{0, 0xffff, 0, 79, false, 783.9909},
 		// A5 blue
-		{0, 0, 0xffff, 81, false},
+		{0, 0, 0xffff, 81, false, 880.0000},
 		// B5 indigo
-		{0x4b4b, 0, 0x8282, 83, false},
+		{0x4b4b, 0, 0x8282, 83, false, 987.7666},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C6 violet
-		{0x7f00, 0, 0xffff, 84, false},
+		{0x7f00, 0, 0xffff, 84, false, 1046.502},
 		// D6 red
-		{0xffff, 0, 0, 86, false},
+		{0xffff, 0, 0, 86, false, 1174.659},
 		// E6 orange
-		{0xffff, 0xa5a5, 0, 88, false},
+		{0xffff, 0xa5a5, 0, 88, false, 1318.510},
 		// F6 yellow
-		{0xffff, 0xffff, 0, 89, false},
+		{0xffff, 0xffff, 0, 89, false, 1396.913},
 		// G6 green
-		{0, 0xffff, 0, 91, false},
+		{0, 0xffff, 0, 91, false, 1567.982},
 		// A6 blue
-		{0, 0, 0xffff, 93, false},
+		{0, 0, 0xffff, 93, false, 1760.000},
 		// B6 indigo
-		{0x4b4b, 0, 0x8282, 95, false},
+		{0x4b4b, 0, 0x8282, 95, false, 1975.533},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 	{
 		// C7 violet
-		{0x7f00, 0, 0xffff, 96, false},
+		{0x7f00, 0, 0xffff, 96, false, 2093.005},
 		// D7 red
-		{0xffff, 0, 0, 98, false},
+		{0xffff, 0, 0, 98, false, 2349.318},
 		// E7 orange
-		{0xffff, 0xa5a5, 0, 100, false},
+		{0xffff, 0xa5a5, 0, 100, false, 2637.020},
 		// F7 yellow
-		{0xffff, 0xffff, 0, 101, false},
+		{0xffff, 0xffff, 0, 101, false, 2793.826},
 		// G7 green
-		{0, 0xffff, 0, 103, false},
+		{0, 0xffff, 0, 103, false, 3135.963},
 		// A7 blue
-		{0, 0, 0xffff, 105, false},
+		{0, 0, 0xffff, 105, false, 3520.000},
 		// B7 indigo
-		{0x4b4b, 0, 0x8282, 107, false},
+		{0x4b4b, 0, 0x8282, 107, false, 3951.066},
 		// rest
-		{0, 0, 0, 0, true},
+		{0, 0, 0, 0, true, 0},
 	},
 }
 

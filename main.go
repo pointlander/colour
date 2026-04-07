@@ -1144,7 +1144,7 @@ func main() {
 			panic(err)
 		}
 		<-ready
-		p := context.NewPlayer(NewKey(523.3, 3*time.Second))
+		p := context.NewPlayer(NewKey(261.63, 3*time.Second))
 		p.Play()
 		time.Sleep(3 * time.Second)
 		return

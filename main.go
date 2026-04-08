@@ -1280,8 +1280,7 @@ func main() {
 	markov := make(map[State][]Entry)
 	var state State
 
-	err = writer.WriteSMF("notes.mid", 1, func(wr *writer.SMF) error {
-		wr.ConsolidateNotes(false)
+	{
 		index := 0
 		meta := 0
 		metacolor := Middle
@@ -1347,16 +1346,10 @@ func main() {
 						if selected < total {
 							if !Notes[entry.X][entry.Y].Rest {
 								fmt.Println("a note")
-								writer.NoteOn(wr, Notes[entry.X][entry.Y].Note, uint8(100))
-								wr.SetDelta(uint32(120 * 1000 * ranks[index]))
-								writer.NoteOff(wr, Notes[entry.X][entry.Y].Note)
-								wr.SetDelta(240)
 								key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
 								piano.Play(key)
 							} else {
 								fmt.Println("a rest")
-								wr.SetChannel(0)
-								wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 								time.Sleep(500 * time.Millisecond)
 							}
 							break
@@ -1366,23 +1359,16 @@ func main() {
 			} else {
 				if !Notes[metacolor][color].Rest {
 					fmt.Println("b note")
-					wr.SetChannel(0)
 					/*i := 4 * intensity[index] * 100
 					if i > 100 {
 						i = 100
 					}*/
 					//fmt.Println("i", i)
 
-					writer.NoteOn(wr, Notes[metacolor][color].Note, uint8(100))
-					wr.SetDelta(uint32(120 * 1000 * ranks[index]))
-					writer.NoteOff(wr, Notes[metacolor][color].Note)
-					wr.SetDelta(240)
 					key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
 					piano.Play(key)
 				} else {
 					fmt.Println("b rest")
-					wr.SetChannel(0)
-					wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
 					time.Sleep(500 * time.Millisecond)
 				}
 			}
@@ -1406,9 +1392,5 @@ func main() {
 			markov[state] = entries
 			state[0], state[1] = state[1], Context{byte(metacolor), byte(color)}
 		}
-		return nil
-	})
-	if err != nil {
-		panic(err)
 	}
 }

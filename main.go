@@ -1351,7 +1351,7 @@ func main() {
 								wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 								writer.NoteOff(wr, Notes[entry.X][entry.Y].Note)
 								wr.SetDelta(240)
-								key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond)
+								key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
 								piano.Play(key)
 							} else {
 								fmt.Println("a rest")
@@ -1377,7 +1377,7 @@ func main() {
 					wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 					writer.NoteOff(wr, Notes[metacolor][color].Note)
 					wr.SetDelta(240)
-					key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond)
+					key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
 					piano.Play(key)
 				} else {
 					fmt.Println("b rest")

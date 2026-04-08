@@ -87,4 +87,7 @@ func (p *Piano) Play(key *Key) {
 	player := p.Context.NewPlayer(key)
 	player.Play()
 	time.Sleep(key.Duration)
+	for player.IsPlaying() {
+
+	}
 }

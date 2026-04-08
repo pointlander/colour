@@ -1141,6 +1141,7 @@ func main() {
 		return
 	}
 
+	piano := NewPiano()
 	rng := rand.New(rand.NewSource(1))
 	input, err := os.Open("images/image02.png")
 	if err != nil {
@@ -1350,10 +1351,13 @@ func main() {
 								wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 								writer.NoteOff(wr, Notes[entry.X][entry.Y].Note)
 								wr.SetDelta(240)
+								key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond)
+								piano.Play(key)
 							} else {
 								fmt.Println("a rest")
 								wr.SetChannel(0)
 								wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
+								time.Sleep(500 * time.Millisecond)
 							}
 							break
 						}
@@ -1373,10 +1377,13 @@ func main() {
 					wr.SetDelta(uint32(120 * 1000 * ranks[index]))
 					writer.NoteOff(wr, Notes[metacolor][color].Note)
 					wr.SetDelta(240)
+					key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond)
+					piano.Play(key)
 				} else {
 					fmt.Println("b rest")
 					wr.SetChannel(0)
 					wr.SetDelta(uint32(240 + 120*1000*ranks[index]))
+					time.Sleep(500 * time.Millisecond)
 				}
 			}
 			if entries == nil {

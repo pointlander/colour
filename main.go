@@ -1273,9 +1273,10 @@ func main() {
 	}
 	type State [Order]Context
 	type Entry struct {
-		X     byte
-		Y     byte
-		Count byte
+		X        byte
+		Y        byte
+		Count    byte
+		Duration []time.Duration
 	}
 	markov := make(map[State][]Entry)
 	var state State
@@ -1346,11 +1347,11 @@ func main() {
 						if selected < total {
 							if !Notes[entry.X][entry.Y].Rest {
 								fmt.Println("a note")
-								key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
-								piano.Play(key)
+								//key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
+								//piano.Play(key)
 							} else {
 								fmt.Println("a rest")
-								time.Sleep(500 * time.Millisecond)
+								//time.Sleep(500 * time.Millisecond)
 							}
 							break
 						}
@@ -1365,11 +1366,11 @@ func main() {
 					}*/
 					//fmt.Println("i", i)
 
-					key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
-					piano.Play(key)
+					//key := NewKey(Notes[metacolor][color].Freq, 500*time.Millisecond*time.Duration(1000*ranks[index]))
+					//piano.Play(key)
 				} else {
 					fmt.Println("b rest")
-					time.Sleep(500 * time.Millisecond)
+					//time.Sleep(500 * time.Millisecond)
 				}
 			}
 			if entries == nil {
@@ -1386,11 +1387,36 @@ func main() {
 			for i, entry := range entries {
 				if entry.X == byte(metacolor) && entry.Y == byte(color) {
 					entries[i].Count++
+					entries[i].Duration = append(entries[i].Duration, 500*time.Millisecond*time.Duration(100*ranks[index]))
 					break
 				}
 			}
 			markov[state] = entries
 			state[0], state[1] = state[1], Context{byte(metacolor), byte(color)}
+		}
+
+		for {
+			entries := markov[state]
+			sum := 0.0
+			for _, entry := range entries {
+				sum += float64(entry.Count)
+			}
+			total, selected := 0.0, rng.Float64()
+			for _, entry := range entries {
+				total += float64(entry.Count) / sum
+				if selected < total {
+					if !Notes[entry.X][entry.Y].Rest {
+						fmt.Println("a note")
+						key := NewKey(Notes[entry.X][entry.Y].Freq, entry.Duration[rng.Intn(len(entry.Duration))])
+						piano.Play(key)
+					} else {
+						fmt.Println("a rest")
+						time.Sleep(500 * time.Millisecond)
+					}
+					state[0], state[1] = state[1], Context{byte(entry.X), byte(entry.Y)}
+					break
+				}
+			}
 		}
 	}
 }

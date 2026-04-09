@@ -18,6 +18,7 @@ type Key struct {
 	Key      float64
 	Buffer   bytes.Buffer
 	Length   int64
+	Index    int64
 	Duration time.Duration
 }
 
@@ -32,21 +33,19 @@ func NewKey(key float64, duration time.Duration) *Key {
 }
 
 func (s *Key) Read(buf []byte) (int, error) {
-	if s.Buffer.Cap() == 0 {
-		length := float64(48000) / float64(s.Key)
-		length1 := float64(48000) / float64(2*s.Key)
-		length2 := float64(48000) / float64(3*s.Key)
-		k := float64(s.Length) / 8
-		for i := 0; i < int(s.Length)/4; i++ {
-			const max = 32767
-			envelope := math.Exp(-float64(i) / k)
-			b := int16(math.Sin(2*math.Pi*float64(i)/length) * 0.1 * max * envelope)
-			b += int16(math.Sin(2*math.Pi*float64(i)/length1) * 0.1 * max * envelope)
-			b += int16(math.Sin(2*math.Pi*float64(i)/length2) * 0.1 * max * envelope)
-			for ch := 0; ch < 2; ch++ {
-				s.Buffer.Write([]byte{byte(b)})
-				s.Buffer.Write([]byte{byte(b >> 8)})
-			}
+	length := float64(48000) / float64(s.Key)
+	length1 := float64(48000) / float64(2*s.Key)
+	length2 := float64(48000) / float64(3*s.Key)
+	k := float64(s.Length) / 8
+	for count := 0; s.Index < s.Length/4 && count < len(buf)/4; s.Index, count = s.Index+1, count+1 {
+		const max = 32767
+		envelope := math.Exp(-float64(s.Index) / k)
+		b := int16(math.Sin(2*math.Pi*float64(s.Index)/length) * 0.1 * max * envelope)
+		b += int16(math.Sin(2*math.Pi*float64(s.Index)/length1) * 0.1 * max * envelope)
+		b += int16(math.Sin(2*math.Pi*float64(s.Index)/length2) * 0.1 * max * envelope)
+		for ch := 0; ch < 2; ch++ {
+			s.Buffer.Write([]byte{byte(b)})
+			s.Buffer.Write([]byte{byte(b >> 8)})
 		}
 	}
 

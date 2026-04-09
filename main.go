@@ -1286,7 +1286,7 @@ func main() {
 		meta := 0
 		metacolor := Middle
 		//rest := 0
-		for iteration := range 1024 {
+		for iteration := range 8 * 1024 {
 			total, selected := 0.0, rng.Float64()
 			for i := range links[index] {
 				total += links[index][i]

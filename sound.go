@@ -25,11 +25,13 @@ type Key struct {
 func NewKey(key float64, duration time.Duration) *Key {
 	length := 2 * 2 * int64(48000) * int64(duration) / int64(time.Second)
 	length = length / 4 * 4
-	return &Key{
+	k := &Key{
 		Key:      key,
 		Length:   length,
 		Duration: duration,
 	}
+	k.Buffer.Grow(int(length))
+	return k
 }
 
 func (s *Key) Read(buf []byte) (int, error) {

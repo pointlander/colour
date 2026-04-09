@@ -1407,11 +1407,11 @@ func main() {
 				if selected < total {
 					if !Notes[entry.X][entry.Y].Rest {
 						fmt.Println("a note")
-						key := NewKey(Notes[entry.X][entry.Y].Freq, entry.Duration[rng.Intn(len(entry.Duration))])
+						key := NewKey(Notes[entry.X][entry.Y].Freq, 500*time.Millisecond+entry.Duration[rng.Intn(len(entry.Duration))])
 						piano.Play(key)
 					} else {
 						fmt.Println("a rest")
-						time.Sleep(500 * time.Millisecond)
+						//time.Sleep(500 * time.Millisecond)
 					}
 					state[0], state[1] = state[1], Context{byte(entry.X), byte(entry.Y)}
 					break

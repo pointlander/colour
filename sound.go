@@ -7,6 +7,7 @@ package main
 import (
 	"io"
 	"math"
+	"runtime"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
@@ -61,6 +62,8 @@ func (s *Key) Read(buf []byte) (int, error) {
 // Piano is a piano
 type Piano struct {
 	Context *oto.Context
+	Players []*oto.Player
+	Player  int
 }
 
 // NewPiano crates a new piano
@@ -76,12 +79,16 @@ func NewPiano() Piano {
 	<-ready
 	return Piano{
 		Context: context,
+		Players: make([]*oto.Player, 1024),
 	}
 }
 
 // Play plays a key
 func (p *Piano) Play(key *Key) {
 	player := p.Context.NewPlayer(key)
+	runtime.KeepAlive(player)
 	player.Play()
 	time.Sleep(key.Duration / 2)
+	p.Players[p.Player] = player
+	p.Player = (p.Player + 1) % len(p.Players)
 }

@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	"image"
-	"image/color"
+	//"image/color"
 	"runtime"
 	"sort"
 	"time"
@@ -148,19 +148,19 @@ func (vc *V4LCamera) Start(device string) {
 				yuyv.Cr[i] = cp[ii+3]
 
 			}
-			gray := image.NewGray(yuyv.Bounds())
+			/*gray := image.NewGray(yuyv.Bounds())
 			dx := yuyv.Bounds().Dx()
 			dy := yuyv.Bounds().Dy()
 			for x := 0; x < dx; x++ {
 				for y := 0; y < dy; y++ {
 					gray.Set(x, y, color.GrayModel.Convert(yuyv.At(x, y)))
 				}
-			}
+			}*/
 
 			select {
 			case vc.Images <- Frame{
 				Frame: yuyv,
-				Gray:  gray,
+				//Gray:  gray,
 			}:
 			default:
 				//fmt.Println("drop", device)

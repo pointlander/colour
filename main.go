@@ -1122,11 +1122,11 @@ func LearnEmbeddingIris(inputs [][]float64, size, width, iterations int) [][]flo
 func VideoMode() {
 	camera := NewV4LCamera()
 	go camera.Start("/dev/video0")
-	type N struct {
+	type K struct {
 		Freq float64
 		Rest time.Duration
 	}
-	play := make(chan N, 8)
+	play := make(chan K, 1)
 	go func() {
 		piano := NewPiano()
 		for n := range play {
@@ -1141,19 +1141,40 @@ func VideoMode() {
 	for frame := range camera.Images {
 		dx := frame.Frame.Bounds().Dx()
 		dy := frame.Frame.Bounds().Dy()
-		for x := 0; x < dx; x++ {
-			for y := 0; y < dy; y++ {
-				r, g, b, _ := frame.Frame.At(x, y).RGBA()
-				for i := range Notes[Middle] {
-					//fmt.Println("freq", Notes[Middle][i].Freq)
-					rr := float64(r - Notes[Middle][i].R)
-					gg := float64(g - Notes[Middle][i].G)
-					bb := float64(b - Notes[Middle][i].B)
-					distance := 1 / math.Sqrt(rr*rr+gg*gg+bb*bb)
-					if distance > 0 {
-						distance = 1 / distance
+		tiles, tile := make([][]float64, (dx*dy)/(N*N)), 0
+		for x := 0; x < dx/N; x++ {
+			for y := 0; y < dy/N; y++ {
+				tiles[tile] = make([]float64, len(Notes[Middle]))
+				for a := 0; a < N; a++ {
+					for b := 0; b < N; b++ {
+						r, g, b, _ := frame.Frame.At(x*N+a, y*N+b).RGBA()
+						for i := range Notes[Middle] {
+							//fmt.Println("freq", Notes[Middle][i].Freq)
+							rr := float64(r - Notes[Middle][i].R)
+							gg := float64(g - Notes[Middle][i].G)
+							bb := float64(b - Notes[Middle][i].B)
+							distance := 1 / math.Sqrt(rr*rr+gg*gg+bb*bb)
+							if distance > 0 {
+								distance = 1 / distance
+							}
+							tiles[tile][i] += distance
+						}
 					}
-					histogram[i] += distance
+				}
+				tile++
+			}
+		}
+		for t := range tiles {
+			sum := 0.0
+			for _, value := range tiles[t] {
+				sum += value
+			}
+			total, selected := 0.0, rng.Float64()
+			for i, value := range tiles[t] {
+				total += value / sum
+				if selected < total {
+					histogram[i]++
+					break
 				}
 			}
 		}
@@ -1178,7 +1199,7 @@ func VideoMode() {
 				total += value / sum
 				if selected < total {
 					fmt.Println("note", i, Notes[Middle][i].Freq, entropy)
-					play <- N{
+					play <- K{
 						Freq: Notes[Middle][i].Freq,
 						Rest: time.Duration(entropy * 500 * float64(time.Millisecond)),
 					}
@@ -1186,7 +1207,7 @@ func VideoMode() {
 				}
 			}
 			for i := range histogram {
-				histogram[i] /= 16
+				histogram[i] = 0 ///= 16
 			}
 		}
 	}

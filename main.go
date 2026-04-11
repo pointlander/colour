@@ -1131,9 +1131,11 @@ func VideoMode() {
 		piano := NewPiano()
 		for n := range play {
 			key := NewKey(n.Freq, n.Rest)
+			fmt.Println("key", n.Freq, n.Rest)
 			piano.Play(key)
 		}
 	}()
+	fmt.Println("freq", Notes[Middle][0].Freq)
 	rng := rand.New(rand.NewSource(1))
 	histogram, index := make([]float64, 8), 0
 	for frame := range camera.Images {
@@ -1143,10 +1145,11 @@ func VideoMode() {
 			for y := 0; y < dy; y++ {
 				r, g, b, _ := frame.Frame.At(x, y).RGBA()
 				for i := range Notes[Middle] {
+					//fmt.Println("freq", Notes[Middle][i].Freq)
 					rr := float64(r - Notes[Middle][i].R)
 					gg := float64(g - Notes[Middle][i].G)
 					bb := float64(b - Notes[Middle][i].B)
-					distance := rr*rr + gg*gg + bb*bb
+					distance := 1 / math.Sqrt(rr*rr+gg*gg+bb*bb)
 					if distance > 0 {
 						distance = 1 / distance
 					}
@@ -1155,30 +1158,35 @@ func VideoMode() {
 			}
 		}
 		index++
-		if index%60 == 0 {
+		fmt.Println("index", index)
+		if index%16 == 0 {
+			fmt.Println("fire", index)
 			sum := 0.0
 			for _, value := range histogram {
 				sum += value
 			}
 			entropy := 0.0
 			for _, value := range histogram {
+				fmt.Printf("%f ", value)
 				p := value / sum
 				entropy += p * math.Log2(p)
 			}
+			fmt.Println()
 			entropy = -entropy
 			total, selected := 0.0, rng.Float64()
 			for i, value := range histogram {
 				total += value / sum
-				if selected < value {
+				if selected < total {
+					fmt.Println("note", i, Notes[Middle][i].Freq, entropy)
 					play <- N{
 						Freq: Notes[Middle][i].Freq,
-						Rest: time.Duration(entropy * float64(time.Millisecond)),
+						Rest: time.Duration(entropy * 500 * float64(time.Millisecond)),
 					}
 					break
 				}
 			}
 			for i := range histogram {
-				histogram[i] /= 2
+				histogram[i] /= 16
 			}
 		}
 	}

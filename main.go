@@ -333,6 +333,8 @@ var (
 	FlagSmith = flag.Bool("smith", false, "smith mode")
 	// FlagGraph graphical mode
 	FlagGraph = flag.Bool("graph", false, "graph mode")
+	// FlagVideo video mode
+	FlagVideo = flag.Bool("video", false, "video mode")
 	// FlagKey test key
 	FlagKey = flag.Bool("key", false, "test key")
 )
@@ -1116,6 +1118,72 @@ func LearnEmbeddingIris(inputs [][]float64, size, width, iterations int) [][]flo
 	return outputs
 }
 
+// VideoMode video mode
+func VideoMode() {
+	camera := NewV4LCamera()
+	go camera.Start("/dev/video0")
+	type N struct {
+		Freq float64
+		Rest time.Duration
+	}
+	play := make(chan N, 8)
+	go func() {
+		piano := NewPiano()
+		for n := range play {
+			key := NewKey(n.Freq, n.Rest)
+			piano.Play(key)
+		}
+	}()
+	rng := rand.New(rand.NewSource(1))
+	histogram, index := make([]float64, 8), 0
+	for frame := range camera.Images {
+		dx := frame.Frame.Bounds().Dx()
+		dy := frame.Frame.Bounds().Dy()
+		for x := 0; x < dx; x++ {
+			for y := 0; y < dy; y++ {
+				r, g, b, _ := frame.Frame.At(x, y).RGBA()
+				for i := range Notes[Middle] {
+					rr := float64(r - Notes[Middle][i].R)
+					gg := float64(g - Notes[Middle][i].G)
+					bb := float64(b - Notes[Middle][i].B)
+					distance := rr*rr + gg*gg + bb*bb
+					if distance > 0 {
+						distance = 1 / distance
+					}
+					histogram[i] += distance
+				}
+			}
+		}
+		index++
+		if index%60 == 0 {
+			sum := 0.0
+			for _, value := range histogram {
+				sum += value
+			}
+			entropy := 0.0
+			for _, value := range histogram {
+				p := value / sum
+				entropy += p * math.Log2(p)
+			}
+			entropy = -entropy
+			total, selected := 0.0, rng.Float64()
+			for i, value := range histogram {
+				total += value / sum
+				if selected < value {
+					play <- N{
+						Freq: Notes[Middle][i].Freq,
+						Rest: time.Duration(entropy * float64(time.Millisecond)),
+					}
+					break
+				}
+			}
+			for i := range histogram {
+				histogram[i] /= 2
+			}
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -1138,6 +1206,11 @@ func main() {
 		piano := NewPiano()
 		key := NewKey(261.63, time.Second)
 		piano.Play(key)
+		return
+	}
+
+	if *FlagVideo {
+		VideoMode()
 		return
 	}
 

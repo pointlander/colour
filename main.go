@@ -1138,6 +1138,7 @@ func VideoMode() {
 	fmt.Println("freq", Notes[Middle][0].Freq)
 	rng := rand.New(rand.NewSource(1))
 	histogram, index := make([]float64, 8), 0
+	var previous *image.YCbCr
 	for frame := range camera.Images {
 		dx := frame.Frame.Bounds().Dx()
 		dy := frame.Frame.Bounds().Dy()
@@ -1180,6 +1181,38 @@ func VideoMode() {
 		}
 		index++
 		fmt.Println("index", index)
+		if previous != nil {
+			r, g, b := 0.0, 0.0, 0.0
+			for x := 0; x < dx; x++ {
+				for y := 0; y < dy; y++ {
+					ra, ga, ba, _ := frame.Frame.At(x, y).RGBA()
+					rb, gb, bb, _ := previous.At(x, y).RGBA()
+					diff := float64(ra) - float64(rb)
+					if diff < 0 {
+						diff = -diff
+					}
+					r += diff
+					diff = float64(ga) - float64(gb)
+					if diff < 0 {
+						diff = -diff
+					}
+					g += diff
+					diff = float64(ba) - float64(bb)
+					if diff < 0 {
+						diff = -diff
+					}
+					b += diff
+				}
+			}
+			r /= float64(65535 * dx * dy)
+			g /= float64(65535 * dx * dy)
+			b /= float64(65535 * dx * dy)
+			//fmt.Println("diff", (r+g+b)/3, r, g, b)
+			if (r+g+b)/3 < 3e-3 {
+				previous = frame.Frame
+				continue
+			}
+		}
 		if index%16 == 0 {
 			fmt.Println("fire", index)
 			sum := 0.0
@@ -1210,6 +1243,7 @@ func VideoMode() {
 				histogram[i] = 0 ///= 16
 			}
 		}
+		previous = frame.Frame
 	}
 }
 
